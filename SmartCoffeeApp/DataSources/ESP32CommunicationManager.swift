@@ -202,17 +202,12 @@ class ESP32CommunicationManager: ObservableObject {
     func makeCoffee(type: CoffeeType, trigger: TriggerType, sleepData: SleepData? = nil) async throws -> CoffeeResponse {
         let startTime = Date()
         
-        let command = CoffeeCommand(
-            type: type,
-            trigger: trigger,
-            sleepScore: sleepData?.computedQuality,
-            userId: await getUserId()
-        )
+        let command = CoffeeCommand(type: type)
         
         do {
             let response: CoffeeResponse = try await performRequest<CoffeeCommand, CoffeeResponse>(
                 method: "POST",
-                endpoint: "/coffee/make",
+                endpoint: "/coffee",
                 body: command
             )
             
@@ -371,10 +366,6 @@ class ESP32CommunicationManager: ObservableObject {
     
     // MARK: - Helper Methods
     
-    private func getUserId() async -> String {
-        // TODO: Implementează generarea/retrieval user ID
-        return "user_\(UUID().uuidString.prefix(8))"
-    }
 }
 
 // MARK: - Data Models

@@ -4,8 +4,8 @@ import UIKit
 /// Tipurile de cafea disponibile
 enum CoffeeType: String, CaseIterable, Codable {
     case latte = "latte"
-    case espressoLung = "lung"
-    case espressoScurt = "scurt"
+    case espressoLung = "espresso_large"
+    case espressoScurt = "espresso"
     
     var displayName: String {
         switch self {
@@ -209,24 +209,12 @@ enum CoffeeCommandStatus: String, Codable {
     }
 }
 
-/// Comanda trimisă către ESP32
+/// Comanda simplă trimisă către ESP32
 struct CoffeeCommand: Codable {
-    let command: String               // "make_coffee"
-    let type: String                  // CoffeeType.rawValue
-    let trigger: String               // TriggerType.rawValue
-    let sleepScore: Double?           // Scorul calității somnului
-    let timestamp: String             // ISO8601
-    let userId: String                // ID unic al utilizatorului
-    let requestId: String             // ID unic al cererii
+    let coffee: String                // CoffeeType.rawValue (espresso, latte, etc.)
     
-    init(type: CoffeeType, trigger: TriggerType, sleepScore: Double?, userId: String) {
-        self.command = "make_coffee"
-        self.type = type.rawValue
-        self.trigger = trigger.rawValue
-        self.sleepScore = sleepScore
-        self.timestamp = ISO8601DateFormatter().string(from: Date())
-        self.userId = userId
-        self.requestId = UUID().uuidString
+    init(type: CoffeeType) {
+        self.coffee = type.rawValue
     }
 }
 
