@@ -187,4 +187,3 @@ let averageSleep = SleepData(duration: 7.0, quality: 0.65, deepSleep: 0.18)
 **Status**: ✅ Complete & Demo Ready
 
 **🎯 Ready to revolutionize your morning routine! ☕**
-
