@@ -12,7 +12,7 @@ class ESP32CommunicationManager: ObservableObject {
     @Published var discoveryInProgress: Bool = false
     @Published var connectionError: String?
     
-    private var baseURL: String = "http://192.168.1.100"
+    private var baseURL: String = "http://192.168.81.60"
     private let session: URLSession
     private let monitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "NetworkMonitor")
@@ -114,7 +114,7 @@ class ESP32CommunicationManager: ObservableObject {
                         if !resolved {
                             resolved = true
                             // Simulare - în realitate ai folosi NWConnection pentru rezolvare
-                            continuation.resume(returning: "192.168.1.100")
+                            continuation.resume(returning: "192.168.81.60")
                         }
                         return
                     }
@@ -139,8 +139,8 @@ class ESP32CommunicationManager: ObservableObject {
             return nil
         }
         
-        let subnet = networkInfo.subnet
-        let commonPorts = [80, 8080, 3000, 8000]
+        let subnet = "192.168.81.60"
+        let commonPorts = [80]
         
         return try await withThrowingTaskGroup(of: String?.self) { group in
             // Scanează primele 50 de IP-uri din subnet
