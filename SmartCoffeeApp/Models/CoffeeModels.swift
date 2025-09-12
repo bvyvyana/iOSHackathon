@@ -75,11 +75,11 @@ enum TriggerType: String, Codable {
 
 /// Recomandarea algoritmului pentru cafea
 struct CoffeeRecommendation {
-    let type: CoffeeType
+    var type: CoffeeType
     var strength: Double              // 0-1 scala intensității
     var urgency: Double               // 0-1 scala urgenței
     let confidence: Double            // 0-1 încrederea algoritmului
-    let reasoning: String             // Explicația recomandării
+    var reasoning: String             // Explicația recomandării
     let sleepFactors: SleepFactors    // Factorii de somn care au influențat decizia
     let timeFactors: TimeFactors      // Factorii temporali
     

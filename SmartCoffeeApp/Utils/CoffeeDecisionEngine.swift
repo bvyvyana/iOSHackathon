@@ -237,14 +237,27 @@ class CoffeeDecisionEngine {
             
             if remainingCaffeine <= 0 {
                 // Nu mai poate consume cafeină
-                adjusted.type = .latte // Cea mai slabă opțiune
-                adjusted.strength = 0.1
-                adjusted.reasoning += "\n⚠️ Limită zilnică de cafeină atinsă"
+                adjusted = CoffeeRecommendation(
+                    type: .latte,
+                    strength: 0.1,
+                    urgency: adjusted.urgency,
+                    confidence: adjusted.confidence,
+                    reasoning: adjusted.reasoning + "\n⚠️ Limită zilnică de cafeină atinsă",
+                    sleepFactors: adjusted.sleepFactors,
+                    timeFactors: adjusted.timeFactors
+                )
             } else {
                 // Ajustează pentru a rămâne în limite
                 let maxStrength = remainingCaffeine / adjusted.type.caffeineContent
-                adjusted.strength = min(adjusted.strength, maxStrength)
-                adjusted.reasoning += "\n📊 Ajustat pentru limita de cafeină"
+                adjusted = CoffeeRecommendation(
+                    type: adjusted.type,
+                    strength: min(adjusted.strength, maxStrength),
+                    urgency: adjusted.urgency,
+                    confidence: adjusted.confidence,
+                    reasoning: adjusted.reasoning + "\n📊 Ajustat pentru limita de cafeină",
+                    sleepFactors: adjusted.sleepFactors,
+                    timeFactors: adjusted.timeFactors
+                )
             }
         }
         
@@ -265,15 +278,28 @@ class CoffeeDecisionEngine {
         
         // 1. Nu permite cafea foarte tare după ora 16
         if hour >= 16 && adjusted.strength > 0.6 {
-            adjusted.strength = 0.6
-            adjusted.reasoning += "\n🕐 Intensitate redusă pentru ora târzie"
+            adjusted = CoffeeRecommendation(
+                type: adjusted.type,
+                strength: 0.6,
+                urgency: adjusted.urgency,
+                confidence: adjusted.confidence,
+                reasoning: adjusted.reasoning + "\n🕐 Intensitate redusă pentru ora târzie",
+                sleepFactors: adjusted.sleepFactors,
+                timeFactors: adjusted.timeFactors
+            )
         }
         
         // 2. Forțează latte după ora 18
         if hour >= 18 {
-            adjusted.type = .latte
-            adjusted.strength = min(0.4, adjusted.strength)
-            adjusted.reasoning += "\n🌙 Latte pentru seară"
+            adjusted = CoffeeRecommendation(
+                type: .latte,
+                strength: min(0.4, adjusted.strength),
+                urgency: adjusted.urgency,
+                confidence: adjusted.confidence,
+                reasoning: adjusted.reasoning + "\n🌙 Latte pentru seară",
+                sleepFactors: adjusted.sleepFactors,
+                timeFactors: adjusted.timeFactors
+            )
         }
         
         // 3. Limitează intensitatea maximă

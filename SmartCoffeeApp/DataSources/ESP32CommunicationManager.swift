@@ -62,7 +62,7 @@ class ESP32CommunicationManager: ObservableObject {
         monitor.start(queue: monitorQueue)
     }
     
-    private func stopNetworkMonitoring() {
+    nonisolated private func stopNetworkMonitoring() {
         monitor.cancel()
     }
     
@@ -318,10 +318,29 @@ class ESP32CommunicationManager: ObservableObject {
         }
     }
     
+    private func createRequest(
+        url: String,
+        method: String,
+        timeout: TimeInterval = 10.0
+    ) -> URLRequest {
+        guard let url = URL(string: url) else {
+            fatalError("Invalid URL: \(url)")
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.timeoutInterval = timeout
+        request.setValue("SmartCoffeeApp/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        return request
+    }
+    
     private func createRequest<T: Codable>(
         url: String,
         method: String,
-        body: T? = nil,
+        body: T,
         timeout: TimeInterval = 10.0
     ) -> URLRequest {
         
@@ -336,14 +355,12 @@ class ESP32CommunicationManager: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        if let body = body {
-            do {
-                let encoder = JSONEncoder()
-                encoder.dateEncodingStrategy = .iso8601
-                request.httpBody = try encoder.encode(body)
-            } catch {
-                print("Encoding error: \(error)")
-            }
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            request.httpBody = try encoder.encode(body)
+        } catch {
+            print("Encoding error: \(error)")
         }
         
         return request
