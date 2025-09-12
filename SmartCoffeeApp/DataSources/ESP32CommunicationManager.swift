@@ -240,7 +240,8 @@ class ESP32CommunicationManager: ObservableObject {
     func getStatus() async throws -> ESP32Status {
         let status: ESP32Status = try await performRequest<Void, ESP32Status>(
             method: "GET",
-            endpoint: "/status"
+            endpoint: "/status",
+            body: nil
         )
         
         esp32Status = status
@@ -253,7 +254,8 @@ class ESP32CommunicationManager: ObservableObject {
     func getHealthMetrics() async throws -> ESP32HealthMetrics {
         return try await performRequest<Void, ESP32HealthMetrics>(
             method: "GET",
-            endpoint: "/health"
+            endpoint: "/health",
+            body: nil
         )
     }
     
@@ -262,7 +264,8 @@ class ESP32CommunicationManager: ObservableObject {
         do {
             let _: ConnectionTestResponse = try await performRequest<Void, ConnectionTestResponse>(
                 method: "GET",
-                endpoint: "/test"
+                endpoint: "/test",
+                body: nil
             )
             await updateConnectionStatus(true)
             return true
