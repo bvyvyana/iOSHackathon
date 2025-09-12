@@ -147,7 +147,7 @@ class ESP32CommunicationManager: ObservableObject {
             for i in 1...50 {
                 for port in commonPorts {
                     group.addTask {
-                        let ip = "\(subnet).\(i)"
+                        let ip = "\(subnet)"
                         return try await self.testESP32Connection(ip: ip, port: port, timeout: 2.0)
                     }
                 }
@@ -172,7 +172,7 @@ class ESP32CommunicationManager: ObservableObject {
     }
     
     private func testESP32Connection(ip: String, port: Int, timeout: TimeInterval) async throws -> String? {
-        let testURL = "http://\(ip):\(port)/test"
+        let testURL = "http://\(ip):\(port)/relay"
         
         do {
             let request = createRequest(url: testURL, method: "GET", timeout: timeout)
