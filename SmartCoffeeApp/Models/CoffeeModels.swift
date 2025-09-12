@@ -1,5 +1,59 @@
 import Foundation
 
+/// Nivelurile de oboseală pentru decizia de cafea
+enum FatigueLevel: String, CaseIterable, Codable {
+    case none = "none"
+    case low = "low"
+    case medium = "medium"
+    case high = "high"
+    case severe = "severe"
+    
+    var displayName: String {
+        switch self {
+        case .none:
+            return "Fără oboseală"
+        case .low:
+            return "Oboseală ușoară"
+        case .medium:
+            return "Oboseală moderată"
+        case .high:
+            return "Oboseală mare"
+        case .severe:
+            return "Oboseală severă"
+        }
+    }
+    
+    var recommendedCoffeeStrength: Double {
+        switch self {
+        case .none:
+            return 0.2
+        case .low:
+            return 0.4
+        case .medium:
+            return 0.6
+        case .high:
+            return 0.8
+        case .severe:
+            return 1.0
+        }
+    }
+    
+    var priority: Int {
+        switch self {
+        case .none:
+            return 0
+        case .low:
+            return 1
+        case .medium:
+            return 2
+        case .high:
+            return 3
+        case .severe:
+            return 4
+        }
+    }
+}
+
 /// Tipurile de cafea disponibile
 enum CoffeeType: String, CaseIterable, Codable {
     case latte = "latte"

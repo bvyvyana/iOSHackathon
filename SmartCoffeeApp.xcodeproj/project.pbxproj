@@ -218,11 +218,11 @@
 				2E4B7A3B2C9A127E000A1B2C /* SettingsViewModel.swift in Sources */,
 				2E4B7A3D2C9A1282000A1B2C /* HomeViewModel.swift in Sources */,
 				2E4B7A3F2C9A1286000A1B2C /* DashboardViewModel.swift in Sources */,
-				2E4B7A1F2C9A1234000A1B2C /* SmartCoffeeAppApp.swift in Sources */,
-				2E4B7A212C9A1234000A1B2C /* ContentView.swift in Sources */,
 				2E4B7A352C9A1272000A1B2C /* SettingsView.swift in Sources */,
 				2E4B7A372C9A1276000A1B2C /* HomeView.swift in Sources */,
 				2E4B7A392C9A127A000A1B2C /* DashboardView.swift in Sources */,
+				2E4B7A1F2C9A1234000A1B2C /* SmartCoffeeAppApp.swift in Sources */,
+				2E4B7A212C9A1234000A1B2C /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
