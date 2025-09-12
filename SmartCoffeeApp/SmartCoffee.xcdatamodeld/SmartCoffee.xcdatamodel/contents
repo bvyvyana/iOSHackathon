@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22757" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AppMetrics" representedClassName="AppMetrics" syncable="YES" codeGenerationType="class">
+        <attribute name="averageResponseTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="esp32ConnectionErrors" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="failedAutoTriggers" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="healthKitAccessErrors" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="manualOverrides" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="successfulAutoTriggers" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalCoffeesRequested" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="CoffeeOrder" representedClassName="CoffeeOrder" syncable="YES" codeGenerationType="class">
+        <attribute name="countdownCancelled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="esp32ResponseCode" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="estimatedBrewTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="responseTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="success" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="trigger" optional="YES" attributeType="String"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+        <attribute name="userOverride" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="wakeDetectionConfidence" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="sleepSession" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SleepSession" inverseName="coffeeOrders" inverseEntity="SleepSession"/>
+    </entity>
+    <entity name="DeviceSettings" representedClassName="DeviceSettings" syncable="YES" codeGenerationType="class">
+        <attribute name="autoModeEnabled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="autoOnlyOnWeekdays" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="coffeeStrengthOverride" optional="YES" attributeType="String"/>
+        <attribute name="countdownDuration" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="esp32IpAddress" optional="YES" attributeType="String"/>
+        <attribute name="esp32Port" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="lastConnectionTest" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="preferredWakeTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="requireConfirmation" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="wakeDetectionSensitivity" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="SleepSession" representedClassName="SleepSession" syncable="YES" codeGenerationType="class">
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="deepSleepPercentage" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="duration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="energyBurned" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="heartRate" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="quality" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="remSleepPercentage" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="steps" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="wakeUpTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="coffeeOrders" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CoffeeOrder" inverseName="sleepSession" inverseEntity="CoffeeOrder"/>
+    </entity>
+</model>
