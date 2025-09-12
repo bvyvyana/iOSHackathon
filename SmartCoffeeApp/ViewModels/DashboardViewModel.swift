@@ -25,10 +25,10 @@ class DashboardViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            async let sleepStats = loadSleepStatistics()
-            async let coffeeStats = loadCoffeeStatistics()
-            async let performanceData = loadPerformanceMetrics()
-            async let trends = loadTrendData()
+            async let sleepStats = try loadSleepStatistics()
+            async let coffeeStats = try loadCoffeeStatistics()
+            async let performanceData = try loadPerformanceMetrics()
+            async let trends = try loadTrendData()
             
             let (sleep, coffee, performance, trendData) = try await (sleepStats, coffeeStats, performanceData, trends)
             
@@ -65,7 +65,7 @@ class DashboardViewModel: ObservableObject {
     
     private func loadSleepStatistics() async throws -> SleepStatistics {
         // Simulare încărcare date somn
-        await Task.sleep(nanoseconds: 500_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         return SleepStatistics(
             averageDuration: 7.2,
@@ -80,7 +80,7 @@ class DashboardViewModel: ObservableObject {
     
     private func loadCoffeeStatistics() async throws -> CoffeeStatistics {
         // Simulare încărcare date cafea
-        await Task.sleep(nanoseconds: 300_000_000)
+        try await Task.sleep(nanoseconds: 300_000_000)
         
         return CoffeeStatistics(
             totalCups: 23,
@@ -91,13 +91,13 @@ class DashboardViewModel: ObservableObject {
             manualOrderPercentage: 33.0,
             averageOrderTime: 1.2,
             totalCaffeine: 1456.0,
-            consumptionTrend: .increasing
+            consumptionTrend: .improving
         )
     }
     
     private func loadPerformanceMetrics() async throws -> PerformanceMetrics {
         // Simulare încărcare metrici performance
-        await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         return PerformanceMetrics(
             esp32ResponseTime: 1.2,
@@ -113,7 +113,7 @@ class DashboardViewModel: ObservableObject {
     
     private func loadTrendData() async throws -> TrendData {
         // Simulare încărcare date trend
-        await Task.sleep(nanoseconds: 400_000_000)
+        try await Task.sleep(nanoseconds: 400_000_000)
         
         let sleepTrend = generateSleepTrendData()
         let coffeeTrend = generateCoffeeTrendData()

@@ -19,7 +19,7 @@ struct DashboardView: View {
                     CoffeeConsumptionChart()
                     
                     // Performance Metrics
-                    PerformanceMetrics()
+                    PerformanceMetricsView()
                     
                     Spacer(minLength: 100)
                 }
@@ -277,7 +277,7 @@ struct CoffeeTypeRow: View {
 
 // MARK: - Performance Metrics
 
-struct PerformanceMetrics: View {
+struct PerformanceMetricsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Performanța Sistemului")
