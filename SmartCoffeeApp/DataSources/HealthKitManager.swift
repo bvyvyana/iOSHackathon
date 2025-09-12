@@ -337,18 +337,11 @@ class SleepAnalyzer {
     private func calculateSleepDuration(samples: [HKCategorySample]) -> TimeInterval {
         return samples.reduce(0) { total, sample in
             if sample.value == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue ||
+               sample.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
                sample.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
                sample.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue {
                 return total + sample.endDate.timeIntervalSince(sample.startDate)
             }
-            
-            // Check for asleepCore only on iOS 16.0+
-            if #available(iOS 16.0, *) {
-                if sample.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue {
-                    return total + sample.endDate.timeIntervalSince(sample.startDate)
-                }
-            }
-            
             return total
         }
     }
