@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UserNotifications
 
 /// ViewModel pentru SettingsView - gestionează toate setările aplicației
 @MainActor
@@ -676,6 +677,3 @@ struct ConnectionTestResult {
     }
 }
 
-// MARK: - Import UNUserNotificationCenter
-
-import UserNotifications

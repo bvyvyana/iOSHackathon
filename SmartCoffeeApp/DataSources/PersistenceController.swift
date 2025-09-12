@@ -122,7 +122,7 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     coffeeOrder1.estimatedBrewTime = 90.0
     coffeeOrder1.sleepSession = sleepSession
     
-    let coffeeOrder2 = CoffeeOrder(context: context)
+    let coffeeOrder2 = CoffeeOrder()
     coffeeOrder2.timestamp = Date().addingTimeInterval(-3600) // 1 hour ago
     coffeeOrder2.type = "scurt"
     coffeeOrder2.trigger = "manual"
@@ -135,7 +135,7 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     coffeeOrder2.estimatedBrewTime = 75.0
     
     // Device settings
-    let deviceSettings = DeviceSettings(context: context)
+    let deviceSettings = DeviceSettings()
     deviceSettings.autoModeEnabled = true
     deviceSettings.countdownDuration = 30
     deviceSettings.requireConfirmation = true
@@ -148,7 +148,7 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     deviceSettings.coffeeStrengthOverride = "medium"
     
     // App metrics
-    let metrics = AppMetrics(context: context)
+    let metrics = AppMetrics()
     metrics.date = Date()
     metrics.totalCoffeesRequested = 5
     metrics.successfulAutoTriggers = 3
