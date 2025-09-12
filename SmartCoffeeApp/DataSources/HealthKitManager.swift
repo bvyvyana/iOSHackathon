@@ -40,7 +40,8 @@ class HealthKitManager: ObservableObject {
     
     func requestPermissions() async throws -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
-            throw HealthKitError.notAvailable
+            print("HealthKit not available on this device")
+            return false
         }
         
         return try await withCheckedThrowingContinuation { continuation in
