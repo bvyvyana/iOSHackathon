@@ -215,7 +215,7 @@ class ESP32CommunicationManager: ObservableObject {
         )
         
         do {
-            let response: CoffeeResponse = try await performRequest(
+            let response: CoffeeResponse = try await performRequest<CoffeeCommand, CoffeeResponse>(
                 method: "POST",
                 endpoint: "/coffee/make",
                 body: command
@@ -277,7 +277,7 @@ class ESP32CommunicationManager: ObservableObject {
     
     /// Actualizează setările ESP32
     func updateSettings(_ settings: ESP32Settings) async throws {
-        let _: SettingsUpdateResponse = try await performRequest(
+        let _: SettingsUpdateResponse = try await performRequest<ESP32Settings, SettingsUpdateResponse>(
             method: "POST",
             endpoint: "/settings",
             body: settings
