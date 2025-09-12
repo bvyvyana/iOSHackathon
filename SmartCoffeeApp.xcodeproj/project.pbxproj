@@ -29,6 +29,7 @@
 		2E4B7A1E2C9A1234000A1B2C /* SmartCoffeeAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCoffeeAppApp.swift; sourceTree = "<group>"; };
 		2E4B7A202C9A1234000A1B2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodeld; sourceTree = "<group>"; };
+		2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodel; sourceTree = "<group>"; };
 		2E4B7A342C9A1272000A1B2C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2E4B7A362C9A1276000A1B2C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2E4B7A382C9A127A000A1B2C /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -440,8 +441,9 @@
 		2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */,
 			);
-			currentVersion = "";
+			currentVersion = 2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */;
 			path = SmartCoffee.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
