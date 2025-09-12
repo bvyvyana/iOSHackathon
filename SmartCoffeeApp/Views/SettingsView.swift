@@ -48,7 +48,7 @@ struct SettingsView: View {
                 
                 // Notifications Section
                 Section("Notificări") {
-                    NotificationSettings(settings: $viewModel.notificationSettings)
+                    NotificationSettingsView(settings: $viewModel.notificationSettings)
                 }
                 
                 // About & Support Section
@@ -390,7 +390,7 @@ struct HealthKitSection: View {
 
 // MARK: - Notification Settings
 
-struct NotificationSettings: View {
+struct NotificationSettingsView: View {
     @Binding var settings: NotificationSettings
     
     var body: some View {

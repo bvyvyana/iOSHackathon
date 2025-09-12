@@ -97,7 +97,7 @@ class PersistenceController {
 
 private func createPreviewData(in context: NSManagedObjectContext) {
     // Sample sleep session
-    let sleepSession = SleepSession(context: context)
+    let sleepSession = SleepSession()
     sleepSession.date = Date()
     sleepSession.duration = 8.5 * 3600 // 8.5 hours
     sleepSession.quality = 78.5
@@ -109,7 +109,7 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     sleepSession.remSleepPercentage = 22.3
     
     // Sample coffee orders
-    let coffeeOrder1 = CoffeeOrder(context: context)
+    let coffeeOrder1 = CoffeeOrder()
     coffeeOrder1.timestamp = Date().addingTimeInterval(-1800) // 30 min ago
     coffeeOrder1.type = "latte"
     coffeeOrder1.trigger = "auto"
