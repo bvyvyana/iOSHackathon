@@ -17,8 +17,7 @@ class ESP32CommunicationManager: ObservableObject {
     private let monitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "NetworkMonitor")
     
-    // Discovery și connection management
-    private var discoveryTask: Task<Void, Never>?
+    // Connection management
     
     // Performance tracking
     private var commandTimes: [TimeInterval] = []
@@ -38,7 +37,6 @@ class ESP32CommunicationManager: ObservableObject {
     
     deinit {
         stopNetworkMonitoring()
-        discoveryTask?.cancel()
     }
     
     // MARK: - Network Monitoring
@@ -76,100 +74,28 @@ class ESP32CommunicationManager: ObservableObject {
             discoveryInProgress = false
         }
         
+        // Folosește IP-ul fix configurat
+        let fixedIP = "192.168.81.60"
+        
         do {
-            // Încearcă mDNS discovery primul
-            if let mdnsIP = try await discoverViaMDNS() {
-                baseURL = "http://\(mdnsIP)"
+            // Testează conexiunea la IP-ul fix
+            if let _ = try await testESP32Connection(ip: fixedIP, port: 80, timeout: 5.0) {
+                baseURL = "http://\(fixedIP)"
                 await updateConnectionStatus(true)
-                return mdnsIP
+                return fixedIP
             }
             
-            // Fallback la scanarea subnet-ului
-            if let scanIP = try await scanLocalSubnet() {
-                baseURL = "http://\(scanIP)"
-                await updateConnectionStatus(true)
-                return scanIP
-            }
-            
-            connectionError = "ESP32 nu a fost găsit în rețea"
+            connectionError = "ESP32 nu răspunde la \(fixedIP)"
             return nil
             
         } catch {
-            connectionError = "Eroare discovery: \(error.localizedDescription)"
+            connectionError = "Eroare la conectare: \(error.localizedDescription)"
             throw error
         }
     }
     
-    private func discoverViaMDNS() async throws -> String? {
-        return try await withCheckedThrowingContinuation { continuation in
-            let browser = NWBrowser(for: .bonjourWithTXTRecord(type: "_http._tcp", domain: nil), using: .tcp)
-            
-            var resolved = false
-            
-            browser.browseResultsChangedHandler = { results, changes in
-                for result in results {
-                    if case .service(let name, _, _, _) = result.endpoint,
-                       name.contains("smart-coffee") {
-                        
-                        if !resolved {
-                            resolved = true
-                            // Simulare - în realitate ai folosi NWConnection pentru rezolvare
-                            continuation.resume(returning: "192.168.81.60")
-                        }
-                        return
-                    }
-                }
-            }
-            
-            browser.start(queue: DispatchQueue.global())
-            
-            // Timeout după 5 secunde
-            DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
-                if !resolved {
-                    resolved = true
-                    browser.cancel()
-                    continuation.resume(returning: nil)
-                }
-            }
-        }
-    }
     
-    private func scanLocalSubnet() async throws -> String? {
-        guard let networkInfo = try await getCurrentNetworkInfo() else {
-            return nil
-        }
-        
-        let subnet = "192.168.81.60"
-        let commonPorts = [80]
-        
-        return try await withThrowingTaskGroup(of: String?.self) { group in
-            // Scanează primele 50 de IP-uri din subnet
-            for i in 1...50 {
-                for port in commonPorts {
-                    group.addTask {
-                        let ip = "\(subnet)"
-                        return try await self.testESP32Connection(ip: ip, port: port, timeout: 2.0)
-                    }
-                }
-            }
-            
-            // Returnează primul ESP32 găsit
-            for try await result in group {
-                if let validIP = result {
-                    return validIP
-                }
-            }
-            return nil
-        }
-    }
     
-    private func getCurrentNetworkInfo() async throws -> NetworkInfo? {
-        return try await withCheckedThrowingContinuation { continuation in
-            // Simulare - în realitate ai folosi APIs specifice pentru network info
-            let networkInfo = NetworkInfo(subnet: "192.168.1", gateway: "192.168.1.1")
-            continuation.resume(returning: networkInfo)
-        }
-    }
     
     private func testESP32Connection(ip: String, port: Int, timeout: TimeInterval) async throws -> String? {
         let testURL = "http://\(ip):\(port)/relay"
