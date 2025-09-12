@@ -31,7 +31,9 @@ class HealthKitManager: ObservableObject {
     }
     
     deinit {
-        stopWakeDetection()
+        Task { @MainActor in
+            stopWakeDetection()
+        }
     }
     
     // MARK: - Authorization

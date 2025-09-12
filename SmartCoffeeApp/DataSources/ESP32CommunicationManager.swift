@@ -238,7 +238,7 @@ class ESP32CommunicationManager: ObservableObject {
     
     /// Obține statusul curent al ESP32
     func getStatus() async throws -> ESP32Status {
-        let status: ESP32Status = try await performRequest(
+        let status: ESP32Status = try await performRequest<Void, ESP32Status>(
             method: "GET",
             endpoint: "/status"
         )
@@ -251,7 +251,7 @@ class ESP32CommunicationManager: ObservableObject {
     
     /// Obține metrici de sănătate ESP32
     func getHealthMetrics() async throws -> ESP32HealthMetrics {
-        return try await performRequest(
+        return try await performRequest<Void, ESP32HealthMetrics>(
             method: "GET",
             endpoint: "/health"
         )
@@ -260,7 +260,7 @@ class ESP32CommunicationManager: ObservableObject {
     /// Testează conexiunea cu ESP32
     func testConnection() async throws -> Bool {
         do {
-            let _: ConnectionTestResponse = try await performRequest(
+            let _: ConnectionTestResponse = try await performRequest<Void, ConnectionTestResponse>(
                 method: "GET",
                 endpoint: "/test"
             )
