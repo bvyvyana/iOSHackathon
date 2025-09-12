@@ -169,23 +169,25 @@ struct TimeFactors {
 
 /// Răspunsul de la ESP32 pentru comandă de cafea
 struct CoffeeResponse: Codable {
-    let status: CoffeeCommandStatus
+    let success: Bool
     let message: String
-    let triggerType: String
-    let estimatedCompletion: String?
-    let errorCode: Int?
-    let timestamp: Date
     
+    // Computed properties pentru compatibilitate cu codul existent
     var isSuccess: Bool {
-        return status == .success
+        return success
     }
     
     var isInProgress: Bool {
-        return status == .inProgress
+        return false // ESP32 nu returnează status in progress
     }
     
     var hasError: Bool {
-        return status == .error
+        return !success
+    }
+    
+    // Pentru compatibilitate cu codul existent
+    var status: CoffeeCommandStatus {
+        return success ? .success : .error
     }
 }
 

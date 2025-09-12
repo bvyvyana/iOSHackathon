@@ -167,6 +167,8 @@ class ESP32CommunicationManager: ObservableObject {
         let command = CoffeeCommand(type: type)
         
         do {
+            print("☕ Sending coffee command: \(command.coffee)")
+            
             let response: CoffeeResponse = try await performRequest<CoffeeCommand, CoffeeResponse>(
                 method: "POST",
                 endpoint: "/coffee",
@@ -180,9 +182,11 @@ class ESP32CommunicationManager: ObservableObject {
             // Log pentru analytics
             await logCoffeeCommand(command: command, response: response, responseTime: responseTime)
             
+            print("✅ Coffee command successful: \(response.message)")
             return response
             
         } catch {
+            print("❌ Coffee command failed: \(error)")
             await logCoffeeError(command: command, error: error)
             throw error
         }
@@ -223,10 +227,21 @@ class ESP32CommunicationManager: ObservableObject {
                 throw ESP32Error.httpError(httpResponse.statusCode)
             }
             
+            // Debug: afișează răspunsul brut de la ESP32
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📡 ESP32 Raw Response: \(responseString)")
+            }
+            
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             
-            return try decoder.decode(U.self, from: data)
+            do {
+                return try decoder.decode(U.self, from: data)
+            } catch {
+                print("❌ JSON Decoding Error: \(error)")
+                print("📄 Raw data: \(String(data: data, encoding: .utf8) ?? "Unable to decode")")
+                throw error
+            }
             
         } catch let error as ESP32Error {
             throw error
