@@ -460,25 +460,6 @@ struct ESP32Status: Codable {
     }
 }
 
-struct ESP32HealthMetrics: Codable {
-    let wifiStrength: Int
-    let uptime: Int
-    let autoCommandsToday: Int
-    let manualCommandsToday: Int
-    let totalCommandsAllTime: Int
-    let successRate: Double
-    let averageResponseTime: Double
-    let lastReboot: String
-    let freeHeapMemory: Int
-    let systemVoltage: Double?
-    
-    var isHealthy: Bool {
-        return wifiStrength > -80 &&
-               successRate > 0.8 &&
-               freeHeapMemory > 10000 &&
-               averageResponseTime < 5.0
-    }
-}
 
 struct ConnectionTestResponse: Codable {
     let status: String

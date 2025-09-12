@@ -1,58 +1,5 @@
 import Foundation
-
-/// Nivelurile de oboseală pentru decizia de cafea
-enum FatigueLevel: String, CaseIterable, Codable {
-    case none = "none"
-    case low = "low"
-    case medium = "medium"
-    case high = "high"
-    case severe = "severe"
-    
-    var displayName: String {
-        switch self {
-        case .none:
-            return "Fără oboseală"
-        case .low:
-            return "Oboseală ușoară"
-        case .medium:
-            return "Oboseală moderată"
-        case .high:
-            return "Oboseală mare"
-        case .severe:
-            return "Oboseală severă"
-        }
-    }
-    
-    var recommendedCoffeeStrength: Double {
-        switch self {
-        case .none:
-            return 0.2
-        case .low:
-            return 0.4
-        case .medium:
-            return 0.6
-        case .high:
-            return 0.8
-        case .severe:
-            return 1.0
-        }
-    }
-    
-    var priority: Int {
-        switch self {
-        case .none:
-            return 0
-        case .low:
-            return 1
-        case .medium:
-            return 2
-        case .high:
-            return 3
-        case .severe:
-            return 4
-        }
-    }
-}
+import UIKit
 
 /// Tipurile de cafea disponibile
 enum CoffeeType: String, CaseIterable, Codable {
@@ -490,46 +437,6 @@ enum WiFiSignalQuality {
 
 // MARK: - ESP32 Status Models
 
-/// Status-ul detaliat al ESP32
-struct ESP32Status: Codable {
-    let online: Bool
-    let lastCoffee: String?
-    let triggerType: String?
-    let coffeeCountToday: Int
-    let autoCoffeesToday: Int
-    let manualCoffeesToday: Int
-    let wifiStrength: Int
-    let uptimeSeconds: Int
-    let autoModeEnabled: Bool
-    let freeHeapMemory: Int?
-    let systemVoltage: Double?
-    let temperature: Double?
-    
-    var signalQuality: WiFiSignalQuality {
-        return WiFiSignalQuality(rssi: wifiStrength)
-    }
-    
-    var uptimeDescription: String {
-        let hours = uptimeSeconds / 3600
-        let minutes = (uptimeSeconds % 3600) / 60
-        
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
-    }
-    
-    var memoryDescription: String {
-        guard let heap = freeHeapMemory else { return "N/A" }
-        
-        if heap > 1024 {
-            return String(format: "%.1f KB", Double(heap) / 1024.0)
-        } else {
-            return "\(heap) B"
-        }
-    }
-}
 
 /// Metrici de sănătate ESP32
 struct ESP32HealthMetrics: Codable {
