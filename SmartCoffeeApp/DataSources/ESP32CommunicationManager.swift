@@ -353,13 +353,13 @@ class ESP32CommunicationManager: ObservableObject {
     // MARK: - Logging & Analytics
     
     private func logCoffeeCommand(command: CoffeeCommand, response: CoffeeResponse, responseTime: TimeInterval) async {
-        print("COFFEE_COMMAND: \(command.type) - \(response.status) (\(String(format: "%.2f", responseTime))s)")
+        print("COFFEE_COMMAND: \(command.coffee) - \(response.status) (\(String(format: "%.2f", responseTime))s)")
         
         // TODO: Trimite către serviciu de analytics
     }
     
     private func logCoffeeError(command: CoffeeCommand, error: Error) async {
-        print("COFFEE_ERROR: \(command.type) - \(error.localizedDescription)")
+        print("COFFEE_ERROR: \(command.coffee) - \(error.localizedDescription)")
         
         // TODO: Trimite către serviciu de error tracking
     }
