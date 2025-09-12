@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		2E4B7A1F2C9A1234000A1B2C /* SmartCoffeeAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A1E2C9A1234000A1B2C /* SmartCoffeeAppApp.swift */; };
 		2E4B7A212C9A1234000A1B2C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A202C9A1234000A1B2C /* ContentView.swift */; };
-		2E4B7A232C9A1235000A1B2C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E4B7A222C9A1235000A1B2C /* Assets.xcassets */; };
-		2E4B7A262C9A1235000A1B2C /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E4B7A252C9A1235000A1B2C /* Preview Assets.xcassets */; };
 		2E4B7A282C9A1235000A1B2C /* SmartCoffee.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */; };
 		2E4B7A352C9A1272000A1B2C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A342C9A1272000A1B2C /* SettingsView.swift */; };
 		2E4B7A372C9A1276000A1B2C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A362C9A1276000A1B2C /* HomeView.swift */; };
@@ -30,8 +28,6 @@
 		2E4B7A1B2C9A1234000A1B2C /* SmartCoffeeApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartCoffeeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E4B7A1E2C9A1234000A1B2C /* SmartCoffeeAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCoffeeAppApp.swift; sourceTree = "<group>"; };
 		2E4B7A202C9A1234000A1B2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		2E4B7A222C9A1235000A1B2C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		2E4B7A252C9A1235000A1B2C /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodeld; sourceTree = "<group>"; };
 		2E4B7A342C9A1272000A1B2C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2E4B7A362C9A1276000A1B2C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -85,18 +81,8 @@
 				2E4B7A332C9A126A000A1B2C /* DataSources */,
 				2E4B7A342C9A126E000A1B2C /* Utils */,
 				2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */,
-				2E4B7A222C9A1235000A1B2C /* Assets.xcassets */,
-				2E4B7A242C9A1235000A1B2C /* Preview Content */,
 			);
 			path = SmartCoffeeApp;
-			sourceTree = "<group>";
-		};
-		2E4B7A242C9A1235000A1B2C /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				2E4B7A252C9A1235000A1B2C /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		2E4B7A2F2C9A125A000A1B2C /* Views */ = {
@@ -212,8 +198,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E4B7A262C9A1235000A1B2C /* Preview Assets.xcassets in Resources */,
-				2E4B7A232C9A1235000A1B2C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -225,20 +209,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				2E4B7A282C9A1235000A1B2C /* SmartCoffee.xcdatamodeld in Sources */,
-				2E4B7A212C9A1234000A1B2C /* ContentView.swift in Sources */,
-				2E4B7A1F2C9A1234000A1B2C /* SmartCoffeeAppApp.swift in Sources */,
-				2E4B7A352C9A1272000A1B2C /* SettingsView.swift in Sources */,
-				2E4B7A372C9A1276000A1B2C /* HomeView.swift in Sources */,
-				2E4B7A392C9A127A000A1B2C /* DashboardView.swift in Sources */,
-				2E4B7A3B2C9A127E000A1B2C /* SettingsViewModel.swift in Sources */,
-				2E4B7A3D2C9A1282000A1B2C /* HomeViewModel.swift in Sources */,
-				2E4B7A3F2C9A1286000A1B2C /* DashboardViewModel.swift in Sources */,
-				2E4B7A412C9A128A000A1B2C /* ESP32CommunicationManager.swift in Sources */,
-				2E4B7A432C9A128E000A1B2C /* HealthKitManager.swift in Sources */,
 				2E4B7A452C9A1292000A1B2C /* PersistenceController.swift in Sources */,
 				2E4B7A472C9A1296000A1B2C /* CoffeeModels.swift in Sources */,
 				2E4B7A492C9A129A000A1B2C /* SleepData.swift in Sources */,
 				2E4B7A4B2C9A129E000A1B2C /* CoffeeDecisionEngine.swift in Sources */,
+				2E4B7A412C9A128A000A1B2C /* ESP32CommunicationManager.swift in Sources */,
+				2E4B7A432C9A128E000A1B2C /* HealthKitManager.swift in Sources */,
+				2E4B7A3B2C9A127E000A1B2C /* SettingsViewModel.swift in Sources */,
+				2E4B7A3D2C9A1282000A1B2C /* HomeViewModel.swift in Sources */,
+				2E4B7A3F2C9A1286000A1B2C /* DashboardViewModel.swift in Sources */,
+				2E4B7A1F2C9A1234000A1B2C /* SmartCoffeeAppApp.swift in Sources */,
+				2E4B7A212C9A1234000A1B2C /* ContentView.swift in Sources */,
+				2E4B7A352C9A1272000A1B2C /* SettingsView.swift in Sources */,
+				2E4B7A372C9A1276000A1B2C /* HomeView.swift in Sources */,
+				2E4B7A392C9A127A000A1B2C /* DashboardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -374,7 +358,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SmartCoffeeApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -405,7 +389,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"SmartCoffeeApp/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
