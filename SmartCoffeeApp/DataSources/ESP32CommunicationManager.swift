@@ -80,7 +80,7 @@ class ESP32CommunicationManager: ObservableObject {
         do {
             // Testează conexiunea la IP-ul fix
             if let _ = try await testESP32Connection(ip: fixedIP, port: 80, timeout: 5.0) {
-                baseURL = "http://\(fixedIP)"
+                baseURL = "http://\(fixedIP)/relay"
                 await updateConnectionStatus(true)
                 return fixedIP
             }
