@@ -171,7 +171,7 @@ extension NSManagedObjectContext {
     }
     
     /// Execută async și salvează
-    func performAndSave(_ block: @escaping () throws -> Void) {
+    func performAndSaveAsync(_ block: @escaping () throws -> Void) {
         perform {
             do {
                 try self.performAndSave(block)

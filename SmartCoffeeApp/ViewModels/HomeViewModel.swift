@@ -17,7 +17,7 @@ class HomeViewModel: ObservableObject {
     // MARK: - Data Loading
     
     /// Încarcă datele inițiale la pornirea view-ului
-    func loadInitialData() async {
+    func loadInitialData() async throws {
         guard !isLoading else { return }
         
         isLoading = true
@@ -27,7 +27,7 @@ class HomeViewModel: ObservableObject {
             // Aici poți adăuga logică specifică de încărcare
             // De exemplu, verificare date locale, sincronizare, etc.
             
-            await Task.sleep(nanoseconds: 500_000_000) // Simulare
+            try await Task.sleep(nanoseconds: 500_000_000) // Simulare
             
             lastRefresh = Date()
             
@@ -39,7 +39,7 @@ class HomeViewModel: ObservableObject {
     }
     
     /// Reîmprospătează toate datele
-    func refreshData() async {
+    func refreshData() async throws {
         isLoading = true
         errorMessage = nil
         
@@ -47,7 +47,7 @@ class HomeViewModel: ObservableObject {
             // Trigger refresh pentru HealthKit și ESP32
             // Această logică va fi implementată în managerii respectivi
             
-            await Task.sleep(nanoseconds: 1_000_000_000) // Simulare
+            try await Task.sleep(nanoseconds: 1_000_000_000) // Simulare
             
             lastRefresh = Date()
             
@@ -93,7 +93,11 @@ class HomeViewModel: ObservableObject {
     
     private func handleConnectionChange() async {
         // Reacție la schimbarea conexiunii ESP32
-        await refreshData()
+        do {
+            try await refreshData()
+        } catch {
+            errorMessage = "Eroare la actualizarea datelor: \(error.localizedDescription)"
+        }
     }
     
     private func handleAutoOrderCoffee() async {
@@ -122,7 +126,7 @@ class CoffeeRecommendationViewModel: ObservableObject {
         Task {
             do {
                 // Simulare procesare
-                await Task.sleep(nanoseconds: 500_000_000)
+                try await Task.sleep(nanoseconds: 500_000_000)
                 
                 let recommendation = decisionEngine.decideCoffeeType(
                     sleepData: sleepData,

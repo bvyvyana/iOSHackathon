@@ -18,7 +18,7 @@ class DashboardViewModel: ObservableObject {
     // MARK: - Data Loading
     
     /// Încarcă toate datele pentru dashboard
-    func loadDashboardData() async {
+    func loadDashboardData() async throws {
         guard !isLoading else { return }
         
         isLoading = true
@@ -49,7 +49,11 @@ class DashboardViewModel: ObservableObject {
     
     /// Reîmprospătează datele
     func refreshData() async {
-        await loadDashboardData()
+        do {
+            try await loadDashboardData()
+        } catch {
+            errorMessage = "Eroare la actualizarea datelor: \(error.localizedDescription)"
+        }
     }
     
     /// Schimbă perioada de timp pentru analiza datelor
@@ -57,7 +61,11 @@ class DashboardViewModel: ObservableObject {
         selectedTimeRange = range
         
         Task {
-            await loadDashboardData()
+            do {
+                try await loadDashboardData()
+            } catch {
+                errorMessage = "Eroare la încărcarea datelor: \(error.localizedDescription)"
+            }
         }
     }
     

@@ -31,7 +31,11 @@ struct DashboardView: View {
             }
         }
         .task {
-            await viewModel.loadDashboardData()
+            do {
+                try await viewModel.loadDashboardData()
+            } catch {
+                print("Error loading dashboard data: \(error)")
+            }
         }
     }
 }

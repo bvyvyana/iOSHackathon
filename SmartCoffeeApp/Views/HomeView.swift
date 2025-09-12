@@ -35,11 +35,19 @@ struct HomeView: View {
             }
             .navigationTitle("☕ Smart Coffee")
             .refreshable {
-                await viewModel.refreshData()
+                do {
+                    try await viewModel.refreshData()
+                } catch {
+                    print("Error refreshing data: \(error)")
+                }
             }
         }
         .task {
-            await viewModel.loadInitialData()
+            do {
+                try await viewModel.loadInitialData()
+            } catch {
+                print("Error loading initial data: \(error)")
+            }
         }
     }
 }
