@@ -78,17 +78,22 @@ class ESP32CommunicationManager: ObservableObject {
         let fixedIP = "192.168.81.60"
         
         do {
+            print("🔍 Trying to connect to ESP32 at \(fixedIP):80...")
+            
             // Testează conexiunea la IP-ul fix
-            if let _ = try await testESP32Connection(ip: fixedIP, port: 80, timeout: 5.0) {
-                baseURL = "http://\(fixedIP)/relay"
+            if let discoveredIP = try await testESP32Connection(ip: fixedIP, port: 80, timeout: 5.0) {
+                print("✅ ESP32 found at \(discoveredIP)")
+                baseURL = "http://\(fixedIP)"
                 await updateConnectionStatus(true)
                 return fixedIP
             }
             
-            connectionError = "ESP32 nu răspunde la \(fixedIP)"
+            print("❌ ESP32 not responding at \(fixedIP)/relay")
+            connectionError = "ESP32 nu răspunde la \(fixedIP)/relay"
             return nil
             
         } catch {
+            print("💥 Connection error: \(error.localizedDescription)")
             connectionError = "Eroare la conectare: \(error.localizedDescription)"
             throw error
         }
@@ -98,27 +103,58 @@ class ESP32CommunicationManager: ObservableObject {
     
     
     private func testESP32Connection(ip: String, port: Int, timeout: TimeInterval) async throws -> String? {
-        let testURL = "http://\(ip):\(port)/relay"
+        // Folosește endpoint-ul principal de ping
+        let testEndpoints = ["/relay"]
+        
+        for endpoint in testEndpoints {
+            let testURL = "http://\(ip)\(endpoint)"
+            print("🔗 Testing ESP32 ping endpoint: \(testURL)")
+            
+            do {
+                let request = createRequest(url: testURL, method: "GET", timeout: timeout)
+                let (data, response) = try await session.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    print("❌ Invalid HTTP response for \(testURL)")
+                    continue
+                }
+                
+                print("📡 Response status: \(httpResponse.statusCode) for \(testURL)")
+                
+                if httpResponse.statusCode == 200 {
+                    // Încearcă să parseze răspunsul
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("📄 Response body: \(responseString)")
+                        
+                        // Verifică dacă este un ESP32 (orice răspuns valid)
+                        if !responseString.isEmpty {
+                            print("✅ ESP32 Smart Coffee detected at \(ip)\(endpoint)")
+                            return ip
+                        }
+                    }
+                }
+            } catch {
+                print("❌ Error testing \(testURL): \(error.localizedDescription)")
+                continue
+            }
+        }
+        
+        print("❌ No valid ESP32 response from \(ip)/relay")
+        return nil
+    }
+    
+    /// Testează manual conexiunea cu ESP32
+    func testManualConnection() async {
+        print("🔄 Manual connection test started...")
         
         do {
-            let request = createRequest(url: testURL, method: "GET", timeout: timeout)
-            let (data, response) = try await session.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
-                return nil
+            if let ip = try await discoverESP32() {
+                print("🎉 Manual test successful: ESP32 found at \(ip)")
+            } else {
+                print("😞 Manual test failed: ESP32 not found")
             }
-            
-            // Verifică dacă răspunsul conține semnătura ESP32
-            if let responseData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let deviceId = responseData["device_id"] as? String,
-               deviceId.contains("ESP32") || deviceId.contains("smart-coffee") {
-                return ip
-            }
-            
-            return nil
         } catch {
-            return nil
+            print("💥 Manual test error: \(error.localizedDescription)")
         }
     }
     
