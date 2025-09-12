@@ -19,7 +19,6 @@ class ESP32CommunicationManager: ObservableObject {
     
     // Discovery și connection management
     private var discoveryTask: Task<Void, Never>?
-    private var healthCheckTimer: Timer?
     
     // Performance tracking
     private var commandTimes: [TimeInterval] = []
@@ -39,7 +38,6 @@ class ESP32CommunicationManager: ObservableObject {
     
     deinit {
         stopNetworkMonitoring()
-        healthCheckTimer?.invalidate()
         discoveryTask?.cancel()
     }
     
@@ -50,9 +48,6 @@ class ESP32CommunicationManager: ObservableObject {
             DispatchQueue.main.async {
                 if path.status == .satisfied {
                     self?.connectionError = nil
-                    Task {
-                        await self?.checkConnection()
-                    }
                 } else {
                     self?.isConnected = false
                     self?.connectionError = "Fără conexiune la internet"
@@ -236,44 +231,6 @@ class ESP32CommunicationManager: ObservableObject {
         }
     }
     
-    /// Obține statusul curent al ESP32
-    func getStatus() async throws -> ESP32Status {
-        let status: ESP32Status = try await performRequest<Void, ESP32Status>(
-            method: "GET",
-            endpoint: "/status",
-            body: nil
-        )
-        
-        esp32Status = status
-        await updateConnectionStatus(true)
-        
-        return status
-    }
-    
-    /// Obține metrici de sănătate ESP32
-    func getHealthMetrics() async throws -> ESP32HealthMetrics {
-        return try await performRequest<Void, ESP32HealthMetrics>(
-            method: "GET",
-            endpoint: "/health",
-            body: nil
-        )
-    }
-    
-    /// Testează conexiunea cu ESP32
-    func testConnection() async throws -> Bool {
-        do {
-            let _: ConnectionTestResponse = try await performRequest<Void, ConnectionTestResponse>(
-                method: "GET",
-                endpoint: "/test",
-                body: nil
-            )
-            await updateConnectionStatus(true)
-            return true
-        } catch {
-            await updateConnectionStatus(false)
-            throw error
-        }
-    }
     
     /// Actualizează setările ESP32
     func updateSettings(_ settings: ESP32Settings) async throws {
@@ -376,43 +333,11 @@ class ESP32CommunicationManager: ObservableObject {
         
         if connected {
             connectionError = nil
-            startHealthChecks()
-        } else {
-            stopHealthChecks()
         }
     }
     
-    private func startHealthChecks() {
-        stopHealthChecks() // Stop existing timer
-        
-        healthCheckTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
-            Task {
-                await self.performHealthCheck()
-            }
-        }
-    }
     
-    private func stopHealthChecks() {
-        healthCheckTimer?.invalidate()
-        healthCheckTimer = nil
-    }
     
-    private func performHealthCheck() async {
-        do {
-            _ = try await testConnection()
-        } catch {
-            await updateConnectionStatus(false)
-            connectionError = "Conexiune pierdută cu ESP32"
-        }
-    }
-    
-    private func checkConnection() async {
-        do {
-            _ = try await testConnection()
-        } catch {
-            isConnected = false
-        }
-    }
     
     // MARK: - Performance Tracking
     

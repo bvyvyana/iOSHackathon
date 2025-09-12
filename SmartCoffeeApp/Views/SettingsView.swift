@@ -303,13 +303,6 @@ struct ESP32ConnectionSection: View {
                     showingManualIP = true
                 }
                 
-                if esp32Manager.isConnected {
-                    Button("Test Conexiune") {
-                        Task {
-                            try? await esp32Manager.testConnection()
-                        }
-                    }
-                }
             }
         }
         .sheet(isPresented: $showingManualIP) {
