@@ -40,16 +40,20 @@ class HealthKitManager: ObservableObject {
     
     func requestPermissions() async throws -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("HealthKit not available on this device")
+            print("❌ HealthKit not available on this device")
             return false
         }
+        
+        print("🔐 Requesting HealthKit permissions...")
         
         return try await withCheckedThrowingContinuation { continuation in
             healthStore.requestAuthorization(toShare: [], read: readTypes) { success, error in
                 DispatchQueue.main.async {
                     if let error = error {
+                        print("❌ HealthKit permission error: \(error)")
                         continuation.resume(throwing: error)
                     } else {
+                        print("✅ HealthKit permissions granted: \(success)")
                         self.isAuthorized = success
                         continuation.resume(returning: success)
                     }
@@ -72,8 +76,11 @@ class HealthKitManager: ObservableObject {
     /// Analizează somnul de azi și returnează datele structurate
     func analyzeTodaysSleep() async throws -> SleepData {
         guard isAuthorized else {
+            print("❌ HealthKit not authorized for sleep analysis")
             throw HealthKitError.notAuthorized
         }
+        
+        print("📊 Starting sleep data analysis...")
         
         let calendar = Calendar.current
         let now = Date()
@@ -87,6 +94,8 @@ class HealthKitManager: ObservableObject {
         
         let (sleep, heartRate, steps, energy) = try await (sleepData, heartRateData, stepsData, energyData)
         
+        print("📈 Collected data - Sleep: \(sleep.count), Heart Rate: \(heartRate.count), Steps: \(steps.count), Energy: \(energy.count)")
+        
         let processedSleepData = try sleepAnalyzer.processSleepData(
             sleepSamples: sleep,
             heartRateSamples: heartRate,
@@ -94,6 +103,8 @@ class HealthKitManager: ObservableObject {
             energySamples: energy,
             date: now
         )
+        
+        print("✅ Sleep analysis completed - Duration: \(processedSleepData.sleepDuration/3600)h, Quality: \(processedSleepData.sleepQuality)")
         
         DispatchQueue.main.async {
             self.currentSleepData = processedSleepData

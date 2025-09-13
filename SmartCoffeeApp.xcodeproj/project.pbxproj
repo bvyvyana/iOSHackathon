@@ -22,6 +22,7 @@
 		2E4B7A472C9A1296000A1B2C /* CoffeeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A462C9A1296000A1B2C /* CoffeeModels.swift */; };
 		2E4B7A492C9A129A000A1B2C /* SleepData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A482C9A129A000A1B2C /* SleepData.swift */; };
 		2E4B7A4B2C9A129E000A1B2C /* CoffeeDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */; };
+		2E4B7A4D2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		2E4B7A482C9A129A000A1B2C /* SleepData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepData.swift; sourceTree = "<group>"; };
 		2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeDecisionEngine.swift; sourceTree = "<group>"; };
 		2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodel; sourceTree = "<group>"; };
+		2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartCoffeeApp.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +83,7 @@
 				2E4B7A332C9A126A000A1B2C /* DataSources */,
 				2E4B7A342C9A126E000A1B2C /* Utils */,
 				2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */,
+				2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */,
 			);
 			path = SmartCoffeeApp;
 			sourceTree = "<group>";
@@ -198,6 +201,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E4B7A4D2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -353,6 +357,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SmartCoffeeApp/SmartCoffeeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -384,10 +389,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SmartCoffeeApp/SmartCoffeeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = ""; // Add your Apple Developer Team ID here
+				DEVELOPMENT_TEAM = NV6QS53PPM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your sleep data to automatically determine the best coffee for your morning routine.";

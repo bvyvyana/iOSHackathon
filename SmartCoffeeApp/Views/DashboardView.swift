@@ -157,7 +157,7 @@ enum ChangeType {
     var color: Color {
         switch self {
         case .positive: return .green
-        case .negative: return .red
+        case .negative: return Color.red
         case .neutral: return .gray
         }
     }
@@ -247,7 +247,7 @@ struct CoffeeConsumptionChart: View {
                             type: .latte, 
                             count: coffeeStats.latteCount, 
                             percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.latteCount) / Double(coffeeStats.totalCups) * 100) : 0, 
-                            color: .brown
+                            color: Color(red: 0.8, green: 0.6, blue: 0.4)
                         )
                         CoffeeTypeRow(
                             type: .espressoLung, 
@@ -259,7 +259,7 @@ struct CoffeeConsumptionChart: View {
                             type: .espressoScurt, 
                             count: coffeeStats.espressoScurtCount, 
                             percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.espressoScurtCount) / Double(coffeeStats.totalCups) * 100) : 0, 
-                            color: .red
+                            color: Color.red
                         )
                     }
                     
@@ -268,7 +268,7 @@ struct CoffeeConsumptionChart: View {
                     // Simplified pie chart representation
                     ZStack {
                         Circle()
-                            .fill(.brown)
+                            .fill(Color(red: 0.8, green: 0.6, blue: 0.4))
                             .frame(width: 100, height: 100)
                         
                         if coffeeStats.totalCups > 0 {
@@ -283,7 +283,7 @@ struct CoffeeConsumptionChart: View {
                             
                             Circle()
                                 .trim(from: 0, to: espressoScurtPercentage)
-                                .stroke(.red, lineWidth: 20)
+                                .stroke(Color.red, lineWidth: 20)
                                 .frame(width: 60, height: 60)
                                 .rotationEffect(.degrees(Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups) * 360 - 90))
                         }

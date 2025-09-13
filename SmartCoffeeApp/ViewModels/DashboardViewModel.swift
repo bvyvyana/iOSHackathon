@@ -105,8 +105,8 @@ class DashboardViewModel: ObservableObject {
         
         // Count coffee types from real data
         let latteCount = coffeeOrders.filter { $0.type == "latte" }.count
-        let espressoLungCount = coffeeOrders.filter { $0.type == "lung" }.count
-        let espressoScurtCount = coffeeOrders.filter { $0.type == "scurt" }.count
+        let espressoLungCount = coffeeOrders.filter { $0.type == "espresso_large" }.count
+        let espressoScurtCount = coffeeOrders.filter { $0.type == "espresso" }.count
         
         // Calculate average response time from real data
         let averageOrderTime = coffeeOrders.isEmpty ? 1.2 : 
@@ -116,7 +116,9 @@ class DashboardViewModel: ObservableObject {
         let manualPercentage = 100 - autoPercentage
         
         // Calculate caffeine based on real coffee types
-        let totalCaffeine = Double(latteCount * 63 + espressoLungCount * 77 + espressoScurtCount * 77)
+        let totalCaffeine = Double(latteCount) * CoffeeType.latte.caffeineContent + 
+                           Double(espressoLungCount) * CoffeeType.espressoLung.caffeineContent + 
+                           Double(espressoScurtCount) * CoffeeType.espressoScurt.caffeineContent
         
         // Determine trend based on recent vs older orders
         let recentOrders = coffeeOrders.filter { 
@@ -159,11 +161,19 @@ class DashboardViewModel: ObservableObject {
             wakeDetectionAccuracy = Double(autoCoffees) / Double(totalCoffees) * 100
         }
         
+        // Calculate real uptime from first connection, fallback to ESP32 manager uptime
+        let realUptime = persistenceController.calculateRealESP32Uptime()
+        let finalUptime = realUptime > 0 ? realUptime : esp32Metrics.uptime
+        
+        // Calculate response time from last 5 successful commands (with fallback)
+        let last5ResponseTime = persistenceController.calculateLastNCommandsResponseTime(maxCommands: 5)
+        let finalResponseTime = last5ResponseTime > 0 ? last5ResponseTime : esp32Metrics.responseTime
+        
         return PerformanceMetrics(
-            esp32ResponseTime: esp32Metrics.responseTime,
+            esp32ResponseTime: finalResponseTime,
             successRate: esp32Metrics.successRate,
             wakeDetectionAccuracy: wakeDetectionAccuracy,
-            esp32Uptime: esp32Metrics.uptime,
+            esp32Uptime: finalUptime,
             networkSignalStrength: wifiStrength,
             lastConnectionTest: esp32Metrics.lastUpdated,
             totalCommands: esp32Metrics.totalCommands,
@@ -207,7 +217,8 @@ class DashboardViewModel: ObservableObject {
                 date: Calendar.current.date(byAdding: .day, value: -day, to: Date()) ?? Date(),
                 totalCups: Int.random(in: 0...5),
                 latteCount: Int.random(in: 0...2),
-                espressoCount: Int.random(in: 0...3),
+                espressoLungCount: Int.random(in: 0...2),
+                espressoScurtCount: Int.random(in: 0...2),
                 autoOrderCount: Int.random(in: 0...2),
                 totalCaffeine: Double.random(in: 0...400)
             )
@@ -405,7 +416,8 @@ struct CoffeeTrendPoint {
     let date: Date
     let totalCups: Int
     let latteCount: Int
-    let espressoCount: Int
+    let espressoLungCount: Int
+    let espressoScurtCount: Int
     let autoOrderCount: Int
     let totalCaffeine: Double
 }
@@ -456,7 +468,7 @@ enum PerformanceStatus {
         case .excellent: return .green
         case .good: return .blue
         case .warning: return .orange
-        case .poor: return .red
+        case .poor: return Color.red
         }
     }
 }

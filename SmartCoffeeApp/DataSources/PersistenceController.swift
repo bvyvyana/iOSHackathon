@@ -166,6 +166,123 @@ class PersistenceController {
         }
     }
     
+    /// Obține prima conexiune ESP32 din DeviceSettings sau ESP32PerformanceLog
+    func getFirstESP32Connection() -> Date? {
+        let context = container.viewContext
+        
+        // Încearcă să găsești prima conexiune din DeviceSettings
+        let deviceRequest: NSFetchRequest<DeviceSettings> = DeviceSettings.fetchRequest()
+        deviceRequest.sortDescriptors = [NSSortDescriptor(keyPath: \DeviceSettings.lastConnectionTest, ascending: true)]
+        deviceRequest.fetchLimit = 1
+        
+        do {
+            let deviceResults = try context.fetch(deviceRequest)
+            if let firstDeviceConnection = deviceResults.first?.lastConnectionTest {
+                print("📅 Found first ESP32 connection from DeviceSettings: \(firstDeviceConnection)")
+                return firstDeviceConnection
+            }
+        } catch {
+            print("Error fetching first ESP32 connection from DeviceSettings: \(error)")
+        }
+        
+        // Fallback: caută prima înregistrare din ESP32PerformanceLog
+        let performanceRequest: NSFetchRequest<ESP32PerformanceLog> = ESP32PerformanceLog.fetchRequest()
+        performanceRequest.sortDescriptors = [NSSortDescriptor(keyPath: \ESP32PerformanceLog.date, ascending: true)]
+        performanceRequest.fetchLimit = 1
+        
+        do {
+            let performanceResults = try context.fetch(performanceRequest)
+            if let firstPerformanceLog = performanceResults.first?.date {
+                print("📅 Found first ESP32 connection from PerformanceLog: \(firstPerformanceLog)")
+                return firstPerformanceLog
+            }
+        } catch {
+            print("Error fetching first ESP32 connection from PerformanceLog: \(error)")
+        }
+        
+        print("⚠️ No ESP32 connection data found in Core Data")
+        return nil
+    }
+    
+    /// Calculează uptime-ul real ESP32 de la prima conexiune
+    func calculateRealESP32Uptime() -> Double {
+        guard let firstConnection = getFirstESP32Connection() else {
+            print("⚠️ No first ESP32 connection found in Core Data")
+            return 0.0
+        }
+        
+        let uptimeInHours = Date().timeIntervalSince(firstConnection) / 3600.0
+        let realUptime = max(0.0, uptimeInHours)
+        
+        print("📊 Real ESP32 uptime calculated: \(String(format: "%.2f", realUptime)) hours since \(firstConnection)")
+        return realUptime
+    }
+    
+    /// Calculează media timpului de răspuns pentru ultimele 5 comenzi ESP32
+    func calculateLast5CommandsResponseTime() -> Double {
+        let context = container.viewContext
+        let request: NSFetchRequest<CoffeeOrder> = CoffeeOrder.fetchRequest()
+        
+        // Sortează după timestamp descrescător pentru a obține ultimele comenzi
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CoffeeOrder.timestamp, ascending: false)]
+        request.fetchLimit = 5
+        
+        do {
+            let last5Orders = try context.fetch(request)
+            
+            // Filtrează doar comenzile cu succes și care au responseTime > 0
+            let successfulOrders = last5Orders.filter { $0.success && $0.responseTime > 0 }
+            
+            guard !successfulOrders.isEmpty else {
+                print("⚠️ No successful coffee orders found for response time calculation")
+                return 0.0
+            }
+            
+            let averageResponseTime = successfulOrders.reduce(0.0) { $0 + $1.responseTime } / Double(successfulOrders.count)
+            
+            print("📊 Last 5 commands response time: \(String(format: "%.2f", averageResponseTime))s (from \(successfulOrders.count) successful orders)")
+            return averageResponseTime
+            
+        } catch {
+            print("Error fetching last 5 coffee orders: \(error)")
+            return 0.0
+        }
+    }
+    
+    /// Calculează media timpului de răspuns pentru ultimele N comenzi ESP32 (cu fallback)
+    func calculateLastNCommandsResponseTime(maxCommands: Int = 5) -> Double {
+        let context = container.viewContext
+        let request: NSFetchRequest<CoffeeOrder> = CoffeeOrder.fetchRequest()
+        
+        // Sortează după timestamp descrescător pentru a obține ultimele comenzi
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CoffeeOrder.timestamp, ascending: false)]
+        request.fetchLimit = maxCommands * 2 // Ia mai multe pentru a avea suficiente cu succes
+        
+        do {
+            let recentOrders = try context.fetch(request)
+            
+            // Filtrează doar comenzile cu succes și care au responseTime > 0
+            let successfulOrders = recentOrders.filter { $0.success && $0.responseTime > 0 }
+            
+            // Ia doar ultimele N comenzi cu succes
+            let lastNSuccessful = Array(successfulOrders.prefix(maxCommands))
+            
+            guard !lastNSuccessful.isEmpty else {
+                print("⚠️ No successful coffee orders found for response time calculation")
+                return 0.0
+            }
+            
+            let averageResponseTime = lastNSuccessful.reduce(0.0) { $0 + $1.responseTime } / Double(lastNSuccessful.count)
+            
+            print("📊 Last \(lastNSuccessful.count) commands response time: \(String(format: "%.2f", averageResponseTime))s")
+            return averageResponseTime
+            
+        } catch {
+            print("Error fetching last \(maxCommands) coffee orders: \(error)")
+            return 0.0
+        }
+    }
+    
     /// Obține comenzile de cafea din ultimele N zile
     func getCoffeeOrders(fromDays days: Int) -> [CoffeeOrder] {
         let context = container.viewContext
@@ -295,7 +412,7 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     
     let coffeeOrder2 = CoffeeOrder()
     coffeeOrder2.timestamp = Date().addingTimeInterval(-3600) // 1 hour ago
-    coffeeOrder2.type = "scurt"
+    coffeeOrder2.type = "espresso"
     coffeeOrder2.trigger = "manual"
     coffeeOrder2.success = true
     coffeeOrder2.responseTime = 1.8
@@ -304,6 +421,19 @@ private func createPreviewData(in context: NSManagedObjectContext) {
     coffeeOrder2.countdownCancelled = false
     coffeeOrder2.esp32ResponseCode = 200
     coffeeOrder2.estimatedBrewTime = 75.0
+    
+    let coffeeOrder3 = CoffeeOrder()
+    coffeeOrder3.timestamp = Date().addingTimeInterval(-7200) // 2 hours ago
+    coffeeOrder3.type = "espresso_large"
+    coffeeOrder3.trigger = "auto"
+    coffeeOrder3.success = true
+    coffeeOrder3.responseTime = 2.1
+    coffeeOrder3.wakeDetectionConfidence = 92.3
+    coffeeOrder3.userOverride = false
+    coffeeOrder3.countdownCancelled = false
+    coffeeOrder3.esp32ResponseCode = 200
+    coffeeOrder3.estimatedBrewTime = 120.0
+    coffeeOrder3.sleepSession = sleepSession
     
     // Device settings
     let deviceSettings = DeviceSettings()

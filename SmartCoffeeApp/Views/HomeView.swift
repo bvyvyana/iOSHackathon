@@ -60,13 +60,13 @@ struct ConnectionStatusView: View {
     var body: some View {
         HStack {
             Image(systemName: esp32Manager.isConnected ? "wifi" : "wifi.slash")
-                .foregroundColor(esp32Manager.isConnected ? .green : .red)
+                .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
                 .font(.title2)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(esp32Manager.isConnected ? "ESP32 Conectat" : "ESP32 Offline")
                     .font(.headline)
-                    .foregroundColor(esp32Manager.isConnected ? .green : .red)
+                    .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
                 
                 if let error = esp32Manager.connectionError {
                     Text(error)
@@ -401,6 +401,8 @@ struct CoffeeRecommendationContent: View {
 // MARK: - Placeholder Views
 
 struct SleepDataPlaceholder: View {
+    @EnvironmentObject private var healthKitManager: HealthKitManager
+    
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -422,7 +424,15 @@ struct SleepDataPlaceholder: View {
             
             Button("Activează HealthKit") {
                 Task {
-                    // Request HealthKit permissions
+                    do {
+                        let granted = try await healthKitManager.requestPermissions()
+                        if granted {
+                            // După autorizare, analizează datele de somn
+                            try await healthKitManager.analyzeTodaysSleep()
+                        }
+                    } catch {
+                        print("HealthKit error: \(error)")
+                    }
                 }
             }
             .buttonStyle(.borderedProminent)
@@ -466,7 +476,7 @@ struct QuickActionsView: View {
                 QuickActionButton(
                     title: "Shot",
                     icon: "⚡️",
-                    color: .red
+                    color: Color.red
                 ) {
                     await orderQuickCoffee(.espressoScurt)
                 }
@@ -603,7 +613,7 @@ enum ActivityStatus {
     var color: Color {
         switch self {
         case .success: return .green
-        case .error: return .red
+        case .error: return Color.red
         case .info: return .blue
         case .warning: return .orange
         }

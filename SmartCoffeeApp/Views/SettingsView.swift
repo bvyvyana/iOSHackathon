@@ -30,11 +30,6 @@ struct SettingsView: View {
                                 await viewModel.testESP32Connection()
                             }
                         },
-                        onScanNetwork: {
-                            Task {
-                                await viewModel.scanForESP32()
-                            }
-                        },
                         onReset: {
                             viewModel.resetESP32Settings()
                         }
@@ -239,11 +234,11 @@ struct ESP32ConnectionSection: View {
                 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(esp32Manager.isConnected ? .green : .red)
+                        .fill(esp32Manager.isConnected ? .green : Color.red)
                         .frame(width: 10, height: 10)
                     
                     Text(esp32Manager.isConnected ? "Conectat" : "Deconectat")
-                        .foregroundColor(esp32Manager.isConnected ? .green : .red)
+                        .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -269,7 +264,7 @@ struct ESP32ConnectionSection: View {
                     Text("Status Conexiune")
                     Spacer()
                     Text(esp32Manager.isConnected ? "Conectat" : "Deconectat")
-                        .foregroundColor(esp32Manager.isConnected ? .green : .red)
+                        .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
                 }
                 
                 if esp32Manager.isConnected {
@@ -331,11 +326,11 @@ struct HealthKitSection: View {
                 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(healthKitManager.isAuthorized ? .green : .red)
+                        .fill(healthKitManager.isAuthorized ? .green : Color.red)
                         .frame(width: 10, height: 10)
                     
                     Text(healthKitManager.isAuthorized ? "Autorizat" : "Neautorizat")
-                        .foregroundColor(healthKitManager.isAuthorized ? .green : .red)
+                        .foregroundColor(healthKitManager.isAuthorized ? .green : Color.red)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -344,7 +339,15 @@ struct HealthKitSection: View {
             if !healthKitManager.isAuthorized {
                 Button("Activează Accesul HealthKit") {
                     Task {
-                        try? await healthKitManager.requestPermissions()
+                        do {
+                            let granted = try await healthKitManager.requestPermissions()
+                            if granted {
+                                // După autorizare, analizează datele de somn
+                                try await healthKitManager.analyzeTodaysSleep()
+                            }
+                        } catch {
+                            print("HealthKit error: \(error)")
+                        }
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -360,11 +363,24 @@ struct HealthKitSection: View {
             }
             
             if healthKitManager.isAuthorized {
+                // Sincronizare manuală date
+                Button("Sincronizează Datele") {
+                    Task {
+                        do {
+                            try await healthKitManager.analyzeTodaysSleep()
+                        } catch {
+                            print("Sync error: \(error)")
+                        }
+                    }
+                }
+                .buttonStyle(.bordered)
+                
+                // Monitorizare trezire
                 if healthKitManager.isMonitoringWake {
                     Button("Oprește Monitorizarea") {
                         healthKitManager.stopWakeDetection()
                     }
-                    .foregroundColor(.red)
+                    .foregroundColor(Color.red)
                 } else {
                     Button("Pornește Monitorizarea") {
                         healthKitManager.startWakeDetection()
@@ -485,12 +501,12 @@ struct AdvancedSettingsSection: View {
             Button("Resetare Setări") {
                 showingResetAlert = true
             }
-            .foregroundColor(.red)
+                                .foregroundColor(Color.red)
             
             Button("Resetare Date") {
                 // Reset all data
             }
-            .foregroundColor(.red)
+                                .foregroundColor(Color.red)
         }
         .alert("Curățare Date Vechi", isPresented: $showingCleanupAlert) {
             Button("Anulare", role: .cancel) { }
@@ -718,7 +734,6 @@ struct ESP32ConnectionAdvancedSection: View {
     let testInProgress: Bool
     let testResult: ConnectionTestResult?
     let onTestConnection: () -> Void
-    let onScanNetwork: () -> Void
     let onReset: () -> Void
     
     @State private var showingAdvancedSettings = false
@@ -758,7 +773,7 @@ struct ESP32ConnectionAdvancedSection: View {
                         ForEach(validationErrors, id: \.self) { error in
                             Text("• \(error)")
                                 .font(.caption)
-                                .foregroundColor(.red)
+                                .foregroundColor(Color.red)
                         }
                     }
                     .padding(.top, 4)
@@ -811,15 +826,6 @@ struct ESP32ConnectionAdvancedSection: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(testInProgress || validationErrors.count > 0)
-                    
-                    Button(action: onScanNetwork) {
-                        HStack {
-                            Image(systemName: "magnifyingglass")
-                            Text("Scanează Rețeaua")
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(testInProgress)
                 }
             }
             
@@ -832,7 +838,7 @@ struct ESP32ConnectionAdvancedSection: View {
             Button("Resetare Setări ESP32") {
                 showingResetAlert = true
             }
-            .foregroundColor(.red)
+                                .foregroundColor(Color.red)
             .alert("Resetare Setări ESP32", isPresented: $showingResetAlert) {
                 Button("Anulare", role: .cancel) { }
                 Button("Resetare", role: .destructive) {
@@ -863,7 +869,7 @@ struct ConnectionTestResultView: View {
             
             Text(result.message)
                 .font(.caption)
-                .foregroundColor(result.success ? .green : .red)
+                .foregroundColor(result.success ? .green : Color.red)
             
             if let statusCode = result.statusCode {
                 Text("HTTP Status: \(statusCode)")
