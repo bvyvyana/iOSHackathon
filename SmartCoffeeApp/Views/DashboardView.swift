@@ -392,7 +392,7 @@ struct PerformanceMetricsView: View {
                         PerformanceRow(
                             title: "Se încarcă...",
                             value: "--",
-                            status: .neutral,
+                            status: .warning,
                             description: "Obținere date..."
                         )
                     }
@@ -443,18 +443,6 @@ struct PerformanceRow: View {
     }
 }
 
-enum PerformanceStatus {
-    case excellent, good, warning, poor
-    
-    var color: Color {
-        switch self {
-        case .excellent: return .green
-        case .good: return .blue
-        case .warning: return .orange
-        case .poor: return .red
-        }
-    }
-}
 
 #Preview {
     DashboardView()

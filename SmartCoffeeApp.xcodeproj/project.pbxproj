@@ -28,8 +28,6 @@
 		2E4B7A1B2C9A1234000A1B2C /* SmartCoffeeApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartCoffeeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E4B7A1E2C9A1234000A1B2C /* SmartCoffeeAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCoffeeAppApp.swift; sourceTree = "<group>"; };
 		2E4B7A202C9A1234000A1B2C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodeld; sourceTree = "<group>"; };
-		2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodel; sourceTree = "<group>"; };
 		2E4B7A342C9A1272000A1B2C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2E4B7A362C9A1276000A1B2C /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2E4B7A382C9A127A000A1B2C /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -42,6 +40,7 @@
 		2E4B7A462C9A1296000A1B2C /* CoffeeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeModels.swift; sourceTree = "<group>"; };
 		2E4B7A482C9A129A000A1B2C /* SleepData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepData.swift; sourceTree = "<group>"; };
 		2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeDecisionEngine.swift; sourceTree = "<group>"; };
+		2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -229,9 +228,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
 		2E4B7A292C9A1235000A1B2C /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -360,7 +356,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = ""; // Add your Apple Developer Team ID here
+				DEVELOPMENT_TEAM = NV6QS53PPM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app needs access to your sleep data to automatically determine the best coffee for your morning routine.";
@@ -449,7 +445,6 @@
 			versionGroupType = wrapper.xcdatamodel;
 		};
 /* End XCVersionGroup section */
-
 	};
 	rootObject = 2E4B7A132C9A1234000A1B2C /* Project object */;
 }

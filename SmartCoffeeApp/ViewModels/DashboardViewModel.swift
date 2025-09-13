@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 /// ViewModel pentru DashboardView - gestionează datele și logica de afișare pentru dashboard
 @MainActor
@@ -153,6 +154,7 @@ class DashboardViewModel: ObservableObject {
         let totalCoffees = coffeeOrders.count
         let autoCoffees = coffeeOrders.filter { $0.trigger == "auto" }.count
         
+        var wakeDetectionAccuracy: Double = 0.0
         if totalCoffees > 0 {
             wakeDetectionAccuracy = Double(autoCoffees) / Double(totalCoffees) * 100
         }
@@ -443,4 +445,18 @@ extension TimeRange {
 extension Notification.Name {
     static let sleepDataUpdated = Notification.Name("sleepDataUpdated")
     static let dashboardDataUpdated = Notification.Name("dashboardDataUpdated")
+}
+
+/// Status pentru performanța sistemului
+enum PerformanceStatus {
+    case excellent, good, warning, poor
+    
+    var color: Color {
+        switch self {
+        case .excellent: return .green
+        case .good: return .blue
+        case .warning: return .orange
+        case .poor: return .red
+        }
+    }
 }
