@@ -8,7 +8,6 @@ class ESP32CommunicationManager: ObservableObject {
     
     @Published var isConnected: Bool = false
     @Published var lastResponseTime: TimeInterval = 0
-    @Published var esp32Status: ESP32Status?
     @Published var discoveryInProgress: Bool = false
     @Published var connectionError: String?
     
@@ -21,7 +20,12 @@ class ESP32CommunicationManager: ObservableObject {
     
     // Performance tracking
     private var commandTimes: [TimeInterval] = []
-    private let maxCommandHistory = 20
+    private let maxCommandHistory = 50
+    @Published var performanceMetrics: ESP32PerformanceMetrics = ESP32PerformanceMetrics()
+    private var totalCommands: Int = 0
+    private var failedCommands: Int = 0
+    private var connectionStartTime: Date?
+    private let persistenceController = PersistenceController.shared
     
     init() {
         // Configurează session cu timeouts optimizate
@@ -33,6 +37,11 @@ class ESP32CommunicationManager: ObservableObject {
         self.session = URLSession(configuration: config)
         
         startNetworkMonitoring()
+        
+        // Load saved performance data
+        Task {
+            await loadPerformanceDataFromCoreData()
+        }
     }
     
     deinit {
@@ -143,20 +152,7 @@ class ESP32CommunicationManager: ObservableObject {
         return nil
     }
     
-    /// Testează manual conexiunea cu ESP32
-    func testManualConnection() async {
-        print("🔄 Manual connection test started...")
-        
-        do {
-            if let ip = try await discoverESP32() {
-                print("🎉 Manual test successful: ESP32 found at \(ip)")
-            } else {
-                print("😞 Manual test failed: ESP32 not found")
-            }
-        } catch {
-            print("💥 Manual test error: \(error.localizedDescription)")
-        }
-    }
+    
     
     // MARK: - Coffee Commands
     
@@ -179,6 +175,14 @@ class ESP32CommunicationManager: ObservableObject {
             let responseTime = Date().timeIntervalSince(startTime)
             await updateResponseTime(responseTime)
             
+            // Save coffee order to Core Data
+            await saveCoffeeOrderToCoreData(
+                command: command,
+                response: response,
+                responseTime: responseTime,
+                trigger: trigger
+            )
+            
             // Log pentru analytics
             await logCoffeeCommand(command: command, response: response, responseTime: responseTime)
             
@@ -187,20 +191,24 @@ class ESP32CommunicationManager: ObservableObject {
             
         } catch {
             print("❌ Coffee command failed: \(error)")
+            await recordFailedCommand()
+            
+            // Save failed coffee order to Core Data
+            await saveCoffeeOrderToCoreData(
+                command: command,
+                response: nil,
+                responseTime: Date().timeIntervalSince(startTime),
+                trigger: trigger,
+                success: false
+            )
+            
             await logCoffeeError(command: command, error: error)
             throw error
         }
     }
     
     
-    /// Actualizează setările ESP32
-    func updateSettings(_ settings: ESP32Settings) async throws {
-        let _: SettingsUpdateResponse = try await performRequest<ESP32Settings, SettingsUpdateResponse>(
-            method: "POST",
-            endpoint: "/settings",
-            body: settings
-        )
-    }
+    
     
     // MARK: - Generic Request Handler
     
@@ -305,7 +313,12 @@ class ESP32CommunicationManager: ObservableObject {
         
         if connected {
             connectionError = nil
+            connectionStartTime = Date()
+        } else {
+            connectionStartTime = nil
         }
+        
+        await updatePerformanceMetrics()
     }
     
     
@@ -315,16 +328,111 @@ class ESP32CommunicationManager: ObservableObject {
     
     private func updateResponseTime(_ time: TimeInterval) async {
         lastResponseTime = time
+        totalCommands += 1
         
         commandTimes.append(time)
         if commandTimes.count > maxCommandHistory {
             commandTimes.removeFirst()
         }
+        
+        await updatePerformanceMetrics()
+    }
+    
+    private func recordFailedCommand() async {
+        failedCommands += 1
+        totalCommands += 1
+        await updatePerformanceMetrics()
+    }
+    
+    private func updatePerformanceMetrics() async {
+        let averageResponseTime = commandTimes.isEmpty ? 0 : commandTimes.reduce(0, +) / Double(commandTimes.count)
+        let successRate = totalCommands > 0 ? Double(totalCommands - failedCommands) / Double(totalCommands) * 100 : 0
+        let uptime = connectionStartTime != nil ? Date().timeIntervalSince(connectionStartTime!) / 3600 : 0 // hours
+        
+        performanceMetrics = ESP32PerformanceMetrics(
+            responseTime: averageResponseTime,
+            successRate: successRate,
+            uptime: uptime,
+            totalCommands: totalCommands,
+            failedCommands: failedCommands,
+            isConnected: isConnected,
+            lastUpdated: Date()
+        )
+        
+        // Save performance metrics to Core Data every 10 commands or every 5 minutes
+        if totalCommands % 10 == 0 || shouldSavePerformanceMetrics() {
+            await savePerformanceMetricsToCoreData()
+        }
+        
+        // Notify dashboard about performance updates
+        NotificationCenter.default.post(name: .esp32PerformanceUpdated, object: performanceMetrics)
     }
     
     var averageResponseTime: TimeInterval {
         guard !commandTimes.isEmpty else { return 0 }
         return commandTimes.reduce(0, +) / Double(commandTimes.count)
+    }
+    
+    // MARK: - Data Persistence
+    
+    private var lastPerformanceSave: Date = Date()
+    
+    private func saveCoffeeOrderToCoreData(
+        command: CoffeeCommand,
+        response: CoffeeResponse?,
+        responseTime: TimeInterval,
+        trigger: TriggerType,
+        success: Bool = true
+    ) async {
+        let esp32ResponseCode: Int16 = response?.isSuccess == true ? 200 : 500
+        
+        persistenceController.saveCoffeeOrder(
+            type: command.coffee,
+            trigger: trigger.rawValue,
+            success: success,
+            responseTime: responseTime,
+            esp32ResponseCode: esp32ResponseCode,
+            wakeDetectionConfidence: 0.0, // TODO: Calculate from sleep data if available
+            userOverride: trigger == .manual,
+            countdownCancelled: false,
+            estimatedBrewTime: 90.0 // Default brew time
+        )
+        
+        print("💾 Coffee order saved to Core Data: \(command.coffee) - \(success ? "Success" : "Failed")")
+    }
+    
+    private func savePerformanceMetricsToCoreData() async {
+        // Use default WiFi strength since we don't have real data from /relay
+        let wifiStrength: Int16 = isConnected ? -45 : -100
+        
+        persistenceController.saveESP32Performance(
+            averageResponseTime: performanceMetrics.responseTime,
+            successRate: performanceMetrics.successRate,
+            totalCommands: Int32(performanceMetrics.totalCommands),
+            failedCommands: Int32(performanceMetrics.failedCommands),
+            uptime: performanceMetrics.uptime,
+            isConnected: performanceMetrics.isConnected,
+            wifiStrength: wifiStrength
+        )
+        
+        lastPerformanceSave = Date()
+        print("💾 ESP32 performance metrics saved to Core Data")
+    }
+    
+    private func shouldSavePerformanceMetrics() -> Bool {
+        // Save every 5 minutes
+        return Date().timeIntervalSince(lastPerformanceSave) > 300
+    }
+    
+    /// Load performance data from Core Data on startup
+    private func loadPerformanceDataFromCoreData() async {
+        if let latestPerformance = persistenceController.getLatestESP32Performance() {
+            // Initialize counters from saved data
+            totalCommands = Int(latestPerformance.totalCommands)
+            failedCommands = Int(latestPerformance.failedCommands)
+            
+            print("📊 Loaded ESP32 performance from Core Data: \(totalCommands) total commands")
+        }
     }
     
     // MARK: - Logging & Analytics
@@ -352,77 +460,10 @@ struct NetworkInfo {
     let gateway: String
 }
 
-struct ESP32Status: Codable {
-    let online: Bool
-    let lastCoffee: String?
-    let triggerType: String?
-    let coffeeCountToday: Int
-    let autoCoffeesToday: Int
-    let manualCoffeesToday: Int
-    let wifiStrength: Int
-    let uptimeSeconds: Int
-    let autoModeEnabled: Bool
-    
-    var signalQuality: SignalQuality {
-        switch wifiStrength {
-        case -30...0: return .excellent
-        case -50..<(-30): return .good
-        case -70..<(-50): return .fair
-        default: return .poor
-        }
-    }
-}
 
 
-struct ConnectionTestResponse: Codable {
-    let status: String
-    let deviceId: String
-    let localIP: String
-    let signalStrength: Int
-    let timestamp: String
-}
 
-struct ESP32Settings: Codable {
-    let autoEnabled: Bool
-    let cooldownSeconds: Int
-    let buttonPressDuration: Int
-    
-    init(autoEnabled: Bool = true, cooldownSeconds: Int = 30, buttonPressDuration: Int = 1000) {
-        self.autoEnabled = autoEnabled
-        self.cooldownSeconds = cooldownSeconds
-        self.buttonPressDuration = buttonPressDuration
-    }
-}
 
-struct SettingsUpdateResponse: Codable {
-    let status: String
-    let message: String?
-}
-
-enum SignalQuality: String, CaseIterable {
-    case excellent = "excellent"
-    case good = "good"
-    case fair = "fair"
-    case poor = "poor"
-    
-    var displayName: String {
-        switch self {
-        case .excellent: return "Excelent"
-        case .good: return "Bun"
-        case .fair: return "Acceptabil"
-        case .poor: return "Slab"
-        }
-    }
-    
-    var color: String {
-        switch self {
-        case .excellent: return "green"
-        case .good: return "blue"
-        case .fair: return "orange"
-        case .poor: return "red"
-        }
-    }
-}
 
 // MARK: - Errors
 
@@ -456,4 +497,67 @@ enum ESP32Error: Error, LocalizedError {
             return "Autentificare eșuată cu ESP32"
         }
     }
+}
+
+// MARK: - ESP32 Performance Metrics Model
+
+struct ESP32PerformanceMetrics {
+    let responseTime: TimeInterval
+    let successRate: Double
+    let uptime: TimeInterval
+    let totalCommands: Int
+    let failedCommands: Int
+    let isConnected: Bool
+    let lastUpdated: Date
+    
+    init(responseTime: TimeInterval = 0, successRate: Double = 0, uptime: TimeInterval = 0, 
+         totalCommands: Int = 0, failedCommands: Int = 0, isConnected: Bool = false, lastUpdated: Date = Date()) {
+        self.responseTime = responseTime
+        self.successRate = successRate
+        self.uptime = uptime
+        self.totalCommands = totalCommands
+        self.failedCommands = failedCommands
+        self.isConnected = isConnected
+        self.lastUpdated = lastUpdated
+    }
+    
+    var formattedResponseTime: String {
+        return String(format: "%.2fs", responseTime)
+    }
+    
+    var formattedSuccessRate: String {
+        return String(format: "%.1f%%", successRate)
+    }
+    
+    var formattedUptime: String {
+        let hours = Int(uptime)
+        let minutes = Int((uptime - Double(hours)) * 60)
+        return "\(hours)h \(minutes)m"
+    }
+    
+    var responseTimeStatus: PerformanceStatus {
+        switch responseTime {
+        case 0...1.0: return .excellent
+        case 1.0...2.0: return .good
+        case 2.0...5.0: return .warning
+        default: return .poor
+        }
+    }
+    
+    var successRateStatus: PerformanceStatus {
+        switch successRate {
+        case 95...: return .excellent
+        case 90..<95: return .good
+        case 80..<90: return .warning
+        default: return .poor
+        }
+    }
+}
+
+// MARK: - Helper Structs
+
+struct EmptyBody: Codable {}
+
+extension Notification.Name {
+    static let esp32PerformanceUpdated = Notification.Name("esp32PerformanceUpdated")
 }

@@ -69,7 +69,7 @@ class PersistenceController {
         let context = container.viewContext
         
         // Lista entităților de șters
-        let entityNames = ["SleepSession", "CoffeeOrder", "DeviceSettings", "AppMetrics"]
+        let entityNames = ["SleepSession", "CoffeeOrder", "DeviceSettings", "AppMetrics", "ESP32PerformanceLog"]
         
         for entityName in entityNames {
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
@@ -90,6 +90,177 @@ class PersistenceController {
         let context = container.newBackgroundContext()
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         return context
+    }
+    
+    // MARK: - Data Saving Methods
+    
+    /// Salvează o comandă de cafea în Core Data
+    func saveCoffeeOrder(
+        type: String,
+        trigger: String,
+        success: Bool,
+        responseTime: Double,
+        esp32ResponseCode: Int16 = 200,
+        wakeDetectionConfidence: Double = 0.0,
+        userOverride: Bool = false,
+        countdownCancelled: Bool = false,
+        estimatedBrewTime: Double = 0.0,
+        sleepSession: SleepSession? = nil
+    ) {
+        let context = container.viewContext
+        
+        context.performAndSaveAsync {
+            let coffeeOrder = CoffeeOrder(context: context)
+            coffeeOrder.timestamp = Date()
+            coffeeOrder.type = type
+            coffeeOrder.trigger = trigger
+            coffeeOrder.success = success
+            coffeeOrder.responseTime = responseTime
+            coffeeOrder.esp32ResponseCode = esp32ResponseCode
+            coffeeOrder.wakeDetectionConfidence = wakeDetectionConfidence
+            coffeeOrder.userOverride = userOverride
+            coffeeOrder.countdownCancelled = countdownCancelled
+            coffeeOrder.estimatedBrewTime = estimatedBrewTime
+            coffeeOrder.sleepSession = sleepSession
+        }
+    }
+    
+    /// Salvează metrici de performance ESP32
+    func saveESP32Performance(
+        averageResponseTime: Double,
+        successRate: Double,
+        totalCommands: Int32,
+        failedCommands: Int32,
+        uptime: Double,
+        isConnected: Bool,
+        wifiStrength: Int16 = 0
+    ) {
+        let context = container.viewContext
+        
+        context.performAndSaveAsync {
+            let performanceLog = ESP32PerformanceLog(context: context)
+            performanceLog.date = Date()
+            performanceLog.averageResponseTime = averageResponseTime
+            performanceLog.successRate = successRate
+            performanceLog.totalCommands = totalCommands
+            performanceLog.failedCommands = failedCommands
+            performanceLog.uptime = uptime
+            performanceLog.isConnected = isConnected
+            performanceLog.wifiStrength = wifiStrength
+        }
+    }
+    
+    /// Obține ultimele metrici de performance ESP32
+    func getLatestESP32Performance() -> ESP32PerformanceLog? {
+        let context = container.viewContext
+        let request: NSFetchRequest<ESP32PerformanceLog> = ESP32PerformanceLog.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ESP32PerformanceLog.date, ascending: false)]
+        request.fetchLimit = 1
+        
+        do {
+            let results = try context.fetch(request)
+            return results.first
+        } catch {
+            print("Error fetching ESP32 performance: \(error)")
+            return nil
+        }
+    }
+    
+    /// Obține comenzile de cafea din ultimele N zile
+    func getCoffeeOrders(fromDays days: Int) -> [CoffeeOrder] {
+        let context = container.viewContext
+        let request: NSFetchRequest<CoffeeOrder> = CoffeeOrder.fetchRequest()
+        
+        let calendar = Calendar.current
+        let startDate = calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        
+        request.predicate = NSPredicate(format: "timestamp >= %@", startDate as NSDate)
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \CoffeeOrder.timestamp, ascending: false)]
+        
+        do {
+            return try context.fetch(request)
+        } catch {
+            print("Error fetching coffee orders: \(error)")
+            return []
+        }
+    }
+    
+    /// Curăță manual datele vechi (apelat din Settings)
+    func performManualCleanup() async -> (performanceRecords: Int, coffeeOrders: Int) {
+        return await withCheckedContinuation { continuation in
+            let context = newBackgroundContext()
+            
+            context.perform {
+                var performanceCount = 0
+                var coffeeCount = 0
+                
+                // Cleanup performance data older than 30 days
+                let performanceRequest: NSFetchRequest<ESP32PerformanceLog> = ESP32PerformanceLog.fetchRequest()
+                let calendar = Calendar.current
+                let performanceCutoff = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+                performanceRequest.predicate = NSPredicate(format: "date < %@", performanceCutoff as NSDate)
+                
+                do {
+                    let oldPerformanceRecords = try context.fetch(performanceRequest)
+                    performanceCount = oldPerformanceRecords.count
+                    for record in oldPerformanceRecords {
+                        context.delete(record)
+                    }
+                } catch {
+                    print("Error cleaning up performance data: \(error)")
+                }
+                
+                // Cleanup coffee orders older than 6 months
+                let coffeeRequest: NSFetchRequest<CoffeeOrder> = CoffeeOrder.fetchRequest()
+                let coffeeCutoff = calendar.date(byAdding: .month, value: -6, to: Date()) ?? Date()
+                coffeeRequest.predicate = NSPredicate(format: "timestamp < %@", coffeeCutoff as NSDate)
+                
+                do {
+                    let oldCoffeeOrders = try context.fetch(coffeeRequest)
+                    coffeeCount = oldCoffeeOrders.count
+                    for order in oldCoffeeOrders {
+                        context.delete(order)
+                    }
+                } catch {
+                    print("Error cleaning up coffee orders: \(error)")
+                }
+                
+                // Save changes
+                do {
+                    if context.hasChanges {
+                        try context.save()
+                    }
+                    print("🧹 Manual cleanup completed: \(performanceCount) performance records, \(coffeeCount) coffee orders")
+                } catch {
+                    print("Error saving cleanup changes: \(error)")
+                }
+                
+                continuation.resume(returning: (performanceCount, coffeeCount))
+            }
+        }
+    }
+    
+    /// Curăță datele vechi de performance (păstrează doar ultimele 30 de zile)
+    private func cleanupOldPerformanceData() {
+        let context = newBackgroundContext()
+        
+        context.performAndSaveAsync {
+            let request: NSFetchRequest<ESP32PerformanceLog> = ESP32PerformanceLog.fetchRequest()
+            let calendar = Calendar.current
+            let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+            
+            request.predicate = NSPredicate(format: "date < %@", cutoffDate as NSDate)
+            
+            do {
+                let oldRecords = try context.fetch(request)
+                for record in oldRecords {
+                    context.delete(record)
+                }
+                print("Cleaned up \(oldRecords.count) old performance records")
+            } catch {
+                print("Error cleaning up old performance data: \(error)")
+            }
+        }
     }
 }
 

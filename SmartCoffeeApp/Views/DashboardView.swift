@@ -10,16 +10,16 @@ struct DashboardView: View {
                 VStack(spacing: 20) {
                     
                     // Statistics Overview
-                    StatisticsOverview()
+                    StatisticsOverview(viewModel: viewModel)
                     
                     // Sleep Trends Chart
                     SleepTrendsChart()
                     
                     // Coffee Consumption Chart
-                    CoffeeConsumptionChart()
+                    CoffeeConsumptionChart(viewModel: viewModel)
                     
                     // Performance Metrics
-                    PerformanceMetricsView()
+                    PerformanceMetricsView(viewModel: viewModel)
                     
                     Spacer(minLength: 100)
                 }
@@ -43,6 +43,8 @@ struct DashboardView: View {
 // MARK: - Statistics Overview
 
 struct StatisticsOverview: View {
+    @ObservedObject var viewModel: DashboardViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Statistici Săptămânale")
@@ -52,37 +54,56 @@ struct StatisticsOverview: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                StatCard(
-                    title: "Cafele Totale",
-                    value: "23",
-                    change: "+15%",
-                    changeType: .positive,
-                    icon: "cup.and.saucer.fill"
-                )
-                
-                StatCard(
-                    title: "Somn Mediu",
-                    value: "7.2h",
-                    change: "+8%",
-                    changeType: .positive,
-                    icon: "moon.zzz.fill"
-                )
-                
-                StatCard(
-                    title: "Calitate Somn",
-                    value: "78%",
-                    change: "-3%",
-                    changeType: .negative,
-                    icon: "star.fill"
-                )
-                
-                StatCard(
-                    title: "Auto Comenzi",
-                    value: "67%",
-                    change: "+12%",
-                    changeType: .positive,
-                    icon: "gear.badge.checkmark"
-                )
+                if let dashboardData = viewModel.dashboardData {
+                    StatCard(
+                        title: "Cafele Totale",
+                        value: "\(dashboardData.coffeeStatistics.totalCups)",
+                        change: dashboardData.coffeeStatistics.consumptionTrend == .improving ? "+15%" : 
+                               dashboardData.coffeeStatistics.consumptionTrend == .stable ? "0%" : "-5%",
+                        changeType: dashboardData.coffeeStatistics.consumptionTrend == .improving ? .positive : 
+                                   dashboardData.coffeeStatistics.consumptionTrend == .stable ? .neutral : .negative,
+                        icon: "cup.and.saucer.fill"
+                    )
+                    
+                    StatCard(
+                        title: "Somn Mediu",
+                        value: dashboardData.sleepStatistics.formattedDuration,
+                        change: dashboardData.sleepStatistics.durationTrend == .improving ? "+8%" : 
+                               dashboardData.sleepStatistics.durationTrend == .stable ? "0%" : "-3%",
+                        changeType: dashboardData.sleepStatistics.durationTrend == .improving ? .positive : 
+                                   dashboardData.sleepStatistics.durationTrend == .stable ? .neutral : .negative,
+                        icon: "moon.zzz.fill"
+                    )
+                    
+                    StatCard(
+                        title: "Calitate Somn",
+                        value: "\(Int(dashboardData.sleepStatistics.averageQuality))%",
+                        change: dashboardData.sleepStatistics.qualityTrend == .improving ? "+5%" : 
+                               dashboardData.sleepStatistics.qualityTrend == .stable ? "0%" : "-3%",
+                        changeType: dashboardData.sleepStatistics.qualityTrend == .improving ? .positive : 
+                                   dashboardData.sleepStatistics.qualityTrend == .stable ? .neutral : .negative,
+                        icon: "star.fill"
+                    )
+                    
+                    StatCard(
+                        title: "Auto Comenzi",
+                        value: "\(Int(dashboardData.coffeeStatistics.autoOrderPercentage))%",
+                        change: dashboardData.coffeeStatistics.autoOrderPercentage > 50 ? "+12%" : "-5%",
+                        changeType: dashboardData.coffeeStatistics.autoOrderPercentage > 50 ? .positive : .negative,
+                        icon: "gear.badge.checkmark"
+                    )
+                } else {
+                    // Loading state
+                    ForEach(0..<4, id: \.self) { _ in
+                        StatCard(
+                            title: "Se încarcă...",
+                            value: "--",
+                            change: "--",
+                            changeType: .neutral,
+                            icon: "hourglass"
+                        )
+                    }
+                }
             }
         }
         .padding()
@@ -211,6 +232,8 @@ enum TimeRange: CaseIterable {
 // MARK: - Coffee Consumption Chart
 
 struct CoffeeConsumptionChart: View {
+    @ObservedObject var viewModel: DashboardViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Consumul de Cafea")
@@ -218,35 +241,76 @@ struct CoffeeConsumptionChart: View {
             
             // Pie chart placeholder
             HStack {
-                VStack(spacing: 8) {
-                    CoffeeTypeRow(type: .latte, count: 8, percentage: 35, color: .brown)
-                    CoffeeTypeRow(type: .espressoLung, count: 10, percentage: 43, color: .orange)
-                    CoffeeTypeRow(type: .espressoScurt, count: 5, percentage: 22, color: .red)
-                }
-                
-                Spacer()
-                
-                // Simplified pie chart representation
-                ZStack {
-                    Circle()
-                        .fill(.brown)
-                        .frame(width: 100, height: 100)
+                if let coffeeStats = viewModel.dashboardData?.coffeeStatistics {
+                    VStack(spacing: 8) {
+                        CoffeeTypeRow(
+                            type: .latte, 
+                            count: coffeeStats.latteCount, 
+                            percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.latteCount) / Double(coffeeStats.totalCups) * 100) : 0, 
+                            color: .brown
+                        )
+                        CoffeeTypeRow(
+                            type: .espressoLung, 
+                            count: coffeeStats.espressoLungCount, 
+                            percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups) * 100) : 0, 
+                            color: .orange
+                        )
+                        CoffeeTypeRow(
+                            type: .espressoScurt, 
+                            count: coffeeStats.espressoScurtCount, 
+                            percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.espressoScurtCount) / Double(coffeeStats.totalCups) * 100) : 0, 
+                            color: .red
+                        )
+                    }
                     
-                    Circle()
-                        .trim(from: 0, to: 0.65)
-                        .stroke(.orange, lineWidth: 20)
-                        .frame(width: 80, height: 80)
-                        .rotationEffect(.degrees(-90))
+                    Spacer()
                     
-                    Circle()
-                        .trim(from: 0, to: 0.22)
-                        .stroke(.red, lineWidth: 20)
-                        .frame(width: 60, height: 60)
-                        .rotationEffect(.degrees(144))
+                    // Simplified pie chart representation
+                    ZStack {
+                        Circle()
+                            .fill(.brown)
+                            .frame(width: 100, height: 100)
+                        
+                        if coffeeStats.totalCups > 0 {
+                            let espressoLungPercentage = Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups)
+                            let espressoScurtPercentage = Double(coffeeStats.espressoScurtCount) / Double(coffeeStats.totalCups)
+                            
+                            Circle()
+                                .trim(from: 0, to: espressoLungPercentage)
+                                .stroke(.orange, lineWidth: 20)
+                                .frame(width: 80, height: 80)
+                                .rotationEffect(.degrees(-90))
+                            
+                            Circle()
+                                .trim(from: 0, to: espressoScurtPercentage)
+                                .stroke(.red, lineWidth: 20)
+                                .frame(width: 60, height: 60)
+                                .rotationEffect(.degrees(Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups) * 360 - 90))
+                        }
+                        
+                        Text("\(coffeeStats.totalCups)")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                    }
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            CoffeeTypeRow(type: .latte, count: 0, percentage: 0, color: .gray)
+                        }
+                    }
                     
-                    Text("23")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                    Spacer()
+                    
+                    ZStack {
+                        Circle()
+                            .fill(.gray.opacity(0.3))
+                            .frame(width: 100, height: 100)
+                        
+                        Text("--")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
         }
@@ -282,43 +346,67 @@ struct CoffeeTypeRow: View {
 // MARK: - Performance Metrics
 
 struct PerformanceMetricsView: View {
+    @ObservedObject var viewModel: DashboardViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Performanța Sistemului")
                 .font(.headline)
             
             VStack(spacing: 12) {
-                PerformanceRow(
-                    title: "Timp Răspuns ESP32",
-                    value: "1.2s",
-                    status: .good,
-                    description: "Mediu ultimele 24h"
-                )
-                
-                PerformanceRow(
-                    title: "Rata de Succes",
-                    value: "98.5%",
-                    status: .excellent,
-                    description: "Comenzi executate cu succes"
-                )
-                
-                PerformanceRow(
-                    title: "Acuratețe Detectare",
-                    value: "87%",
-                    status: .good,
-                    description: "Treziri detectate corect"
-                )
-                
-                PerformanceRow(
-                    title: "Uptime ESP32",
-                    value: "23.5h",
-                    status: .excellent,
-                    description: "Fără restart din ieri"
-                )
+                if let performanceMetrics = viewModel.dashboardData?.performanceMetrics {
+                    PerformanceRow(
+                        title: "Timp Răspuns ESP32",
+                        value: String(format: "%.2fs", performanceMetrics.esp32ResponseTime),
+                        status: performanceMetrics.responseTimeStatus,
+                        description: "Mediu ultimele comenzi"
+                    )
+                    
+                    PerformanceRow(
+                        title: "Rata de Succes",
+                        value: String(format: "%.1f%%", performanceMetrics.successRate),
+                        status: performanceMetrics.successRateStatus,
+                        description: "Comenzi executate cu succes"
+                    )
+                    
+                    PerformanceRow(
+                        title: "Acuratețe Detectare",
+                        value: String(format: "%.0f%%", performanceMetrics.wakeDetectionAccuracy),
+                        status: performanceMetrics.wakeDetectionAccuracy >= 85 ? .excellent : 
+                                performanceMetrics.wakeDetectionAccuracy >= 70 ? .good : 
+                                performanceMetrics.wakeDetectionAccuracy >= 50 ? .warning : .poor,
+                        description: "Treziri detectate corect"
+                    )
+                    
+                    PerformanceRow(
+                        title: "Uptime ESP32",
+                        value: formatUptime(performanceMetrics.esp32Uptime),
+                        status: performanceMetrics.esp32Uptime >= 20 ? .excellent :
+                                performanceMetrics.esp32Uptime >= 10 ? .good :
+                                performanceMetrics.esp32Uptime >= 5 ? .warning : .poor,
+                        description: "Timp funcționare continuă"
+                    )
+                } else {
+                    // Loading state
+                    ForEach(0..<4, id: \.self) { _ in
+                        PerformanceRow(
+                            title: "Se încarcă...",
+                            value: "--",
+                            status: .neutral,
+                            description: "Obținere date..."
+                        )
+                    }
+                }
             }
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+    
+    private func formatUptime(_ uptime: Double) -> String {
+        let hours = Int(uptime)
+        let minutes = Int((uptime - Double(hours)) * 60)
+        return "\(hours)h \(minutes)m"
     }
 }
 

@@ -10,6 +10,8 @@ class DashboardViewModel: ObservableObject {
     @Published var selectedTimeRange: TimeRange = .week
     
     private var cancellables = Set<AnyCancellable>()
+    private let esp32Manager = ESP32CommunicationManager()
+    private let persistenceController = PersistenceController.shared
     
     init() {
         setupObservers()
@@ -25,6 +27,11 @@ class DashboardViewModel: ObservableObject {
         errorMessage = nil
         
         do {
+            // Initialize ESP32 connection if not already connected
+            if !esp32Manager.isConnected {
+                _ = try? await esp32Manager.discoverESP32()
+            }
+            
             async let sleepStats = try loadSleepStatistics()
             async let coffeeStats = try loadCoffeeStatistics()
             async let performanceData = try loadPerformanceMetrics()
@@ -87,35 +94,78 @@ class DashboardViewModel: ObservableObject {
     }
     
     private func loadCoffeeStatistics() async throws -> CoffeeStatistics {
-        // Simulare încărcare date cafea
-        try await Task.sleep(nanoseconds: 300_000_000)
+        // Get real coffee data from Core Data
+        let days = selectedTimeRange.numberOfDays
+        let coffeeOrders = persistenceController.getCoffeeOrders(fromDays: days)
+        
+        let totalCups = coffeeOrders.count
+        let autoCups = coffeeOrders.filter { $0.trigger == "auto" }.count
+        let manualCups = coffeeOrders.filter { $0.trigger == "manual" }.count
+        
+        // Count coffee types from real data
+        let latteCount = coffeeOrders.filter { $0.type == "latte" }.count
+        let espressoLungCount = coffeeOrders.filter { $0.type == "lung" }.count
+        let espressoScurtCount = coffeeOrders.filter { $0.type == "scurt" }.count
+        
+        // Calculate average response time from real data
+        let averageOrderTime = coffeeOrders.isEmpty ? 1.2 : 
+            coffeeOrders.reduce(0.0) { $0 + $1.responseTime } / Double(coffeeOrders.count)
+        
+        let autoPercentage = totalCups > 0 ? Double(autoCups) / Double(totalCups) * 100 : 0
+        let manualPercentage = 100 - autoPercentage
+        
+        // Calculate caffeine based on real coffee types
+        let totalCaffeine = Double(latteCount * 63 + espressoLungCount * 77 + espressoScurtCount * 77)
+        
+        // Determine trend based on recent vs older orders
+        let recentOrders = coffeeOrders.filter { 
+            $0.timestamp?.timeIntervalSinceNow ?? 0 > -86400 * 3 // Last 3 days
+        }
+        let recentAutoPercentage = recentOrders.isEmpty ? 0 : 
+            Double(recentOrders.filter { $0.trigger == "auto" }.count) / Double(recentOrders.count) * 100
+        
+        let trend: Trend = recentAutoPercentage > autoPercentage + 5 ? .improving :
+                          recentAutoPercentage < autoPercentage - 5 ? .declining : .stable
         
         return CoffeeStatistics(
-            totalCups: 23,
-            latteCount: 8,
-            espressoLungCount: 10,
-            espressoScurtCount: 5,
-            autoOrderPercentage: 67.0,
-            manualOrderPercentage: 33.0,
-            averageOrderTime: 1.2,
-            totalCaffeine: 1456.0,
-            consumptionTrend: .improving
+            totalCups: totalCups,
+            latteCount: latteCount,
+            espressoLungCount: espressoLungCount,
+            espressoScurtCount: espressoScurtCount,
+            autoOrderPercentage: autoPercentage,
+            manualOrderPercentage: manualPercentage,
+            averageOrderTime: averageOrderTime,
+            totalCaffeine: totalCaffeine,
+            consumptionTrend: trend
         )
     }
     
     private func loadPerformanceMetrics() async throws -> PerformanceMetrics {
-        // Simulare încărcare metrici performance
-        try await Task.sleep(nanoseconds: 200_000_000)
+        // Get real performance data from ESP32 manager
+        let esp32Metrics = esp32Manager.performanceMetrics
+        
+        // Use default WiFi strength based on connection status
+        let wifiStrength = esp32Manager.isConnected ? -45 : -100
+        
+        // Calculate wake detection accuracy from real Core Data instead of ESP32Status
+        let days = selectedTimeRange.numberOfDays
+        let coffeeOrders = persistenceController.getCoffeeOrders(fromDays: days)
+        let totalCoffees = coffeeOrders.count
+        let autoCoffees = coffeeOrders.filter { $0.trigger == "auto" }.count
+        
+        if totalCoffees > 0 {
+            wakeDetectionAccuracy = Double(autoCoffees) / Double(totalCoffees) * 100
+        }
         
         return PerformanceMetrics(
-            esp32ResponseTime: 1.2,
-            successRate: 98.5,
-            wakeDetectionAccuracy: 87.0,
-            esp32Uptime: 23.5,
-            networkSignalStrength: -45,
-            lastConnectionTest: Date().addingTimeInterval(-300),
-            totalCommands: 156,
-            failedCommands: 2
+            esp32ResponseTime: esp32Metrics.responseTime,
+            successRate: esp32Metrics.successRate,
+            wakeDetectionAccuracy: wakeDetectionAccuracy,
+            esp32Uptime: esp32Metrics.uptime,
+            networkSignalStrength: wifiStrength,
+            lastConnectionTest: esp32Metrics.lastUpdated,
+            totalCommands: esp32Metrics.totalCommands,
+            failedCommands: esp32Metrics.failedCommands
         )
     }
     
@@ -182,6 +232,15 @@ class DashboardViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Observer pentru actualizări performance ESP32
+        NotificationCenter.default.publisher(for: .esp32PerformanceUpdated)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.refreshPerformanceData()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func refreshSleepData() async {
@@ -203,6 +262,18 @@ class DashboardViewModel: ObservableObject {
             print("Error refreshing coffee data: \(error)")
         }
     }
+    
+    private func refreshPerformanceData() async {
+        // Refresh doar datele de performance
+        do {
+            let performanceMetrics = try await loadPerformanceMetrics()
+            dashboardData?.performanceMetrics = performanceMetrics
+        } catch {
+            print("Error refreshing performance data: \(error)")
+        }
+    }
+    
+    
 }
 
 // MARK: - Data Models

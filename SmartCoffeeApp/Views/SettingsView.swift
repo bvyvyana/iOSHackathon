@@ -265,19 +265,19 @@ struct ESP32ConnectionSection: View {
                         .foregroundColor(.secondary)
                 }
                 
-                if let status = esp32Manager.esp32Status {
-                    HStack {
-                        Text("Uptime ESP32")
-                        Spacer()
-                        Text(formatUptime(status.uptimeSeconds))
-                            .foregroundColor(.secondary)
-                    }
-                    
+                HStack {
+                    Text("Status Conexiune")
+                    Spacer()
+                    Text(esp32Manager.isConnected ? "Conectat" : "Deconectat")
+                        .foregroundColor(esp32Manager.isConnected ? .green : .red)
+                }
+                
+                if esp32Manager.isConnected {
                     HStack {
                         Text("Semnal WiFi")
                         Spacer()
-                        Text("\(status.wifiStrength) dBm (\(status.signalQuality.displayName))")
-                            .foregroundColor(Color(status.signalQuality.color))
+                        Text("-45 dBm (Bun)")
+                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -440,6 +440,9 @@ struct AboutSection: View {
 struct AdvancedSettingsSection: View {
     @State private var showingResetAlert = false
     @State private var showingDiagnostics = false
+    @State private var showingCleanupAlert = false
+    @State private var cleanupInProgress = false
+    @State private var cleanupResult: String?
     
     var body: some View {
         Group {
@@ -455,6 +458,30 @@ struct AdvancedSettingsSection: View {
                 CommandHistoryView()
             }
             
+            Button(action: {
+                showingCleanupAlert = true
+            }) {
+                HStack {
+                    if cleanupInProgress {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Curățare în curs...")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Image(systemName: "trash.circle")
+                        Text("Curățare Date Vechi")
+                    }
+                }
+            }
+            .disabled(cleanupInProgress)
+            .foregroundColor(.orange)
+            
+            if let result = cleanupResult {
+                Text(result)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
             Button("Resetare Setări") {
                 showingResetAlert = true
             }
@@ -464,6 +491,14 @@ struct AdvancedSettingsSection: View {
                 // Reset all data
             }
             .foregroundColor(.red)
+        }
+        .alert("Curățare Date Vechi", isPresented: $showingCleanupAlert) {
+            Button("Anulare", role: .cancel) { }
+            Button("Curățare", role: .destructive) {
+                performCleanup()
+            }
+        } message: {
+            Text("Această acțiune va șterge:\n• Date performance ESP32 > 30 zile\n• Comenzi de cafea > 6 luni\n\nAceastă acțiune nu poate fi anulată.")
         }
         .alert("Resetare Setări", isPresented: $showingResetAlert) {
             Button("Anulare", role: .cancel) { }
@@ -475,6 +510,25 @@ struct AdvancedSettingsSection: View {
         }
         .sheet(isPresented: $showingDiagnostics) {
             SystemDiagnosticsView()
+        }
+    }
+    
+    private func performCleanup() {
+        cleanupInProgress = true
+        cleanupResult = nil
+        
+        Task {
+            let result = await PersistenceController.shared.performManualCleanup()
+            
+            await MainActor.run {
+                cleanupInProgress = false
+                cleanupResult = "Șterse: \(result.performanceRecords) înregistrări performance, \(result.coffeeOrders) comenzi cafea"
+                
+                // Clear result after 5 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    cleanupResult = nil
+                }
+            }
         }
     }
 }
