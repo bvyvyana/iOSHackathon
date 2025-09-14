@@ -22,6 +22,8 @@
 		2E4B7A472C9A1296000A1B2C /* CoffeeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A462C9A1296000A1B2C /* CoffeeModels.swift */; };
 		2E4B7A492C9A129A000A1B2C /* SleepData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A482C9A129A000A1B2C /* SleepData.swift */; };
 		2E4B7A4B2C9A129E000A1B2C /* CoffeeDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */; };
+		2E4B7A4F2C9A12AA000A1B2C /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4E2C9A12AA000A1B2C /* ColorExtensions.swift */; };
+		2E4B7A502C9A12AB000A1B2C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4F2C9A12AB000A1B2C /* Assets.xcassets */; };
 		2E4B7A4D2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = 2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +43,8 @@
 		2E4B7A462C9A1296000A1B2C /* CoffeeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeModels.swift; sourceTree = "<group>"; };
 		2E4B7A482C9A129A000A1B2C /* SleepData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepData.swift; sourceTree = "<group>"; };
 		2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoffeeDecisionEngine.swift; sourceTree = "<group>"; };
+		2E4B7A4E2C9A12AA000A1B2C /* ColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensions.swift; sourceTree = "<group>"; };
+		2E4B7A4F2C9A12AB000A1B2C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E4B7A4C2C9A12A2000A1B2C /* SmartCoffee.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = SmartCoffee.xcdatamodel; sourceTree = "<group>"; };
 		2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SmartCoffeeApp.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,6 +86,7 @@
 				2E4B7A322C9A1266000A1B2C /* Models */,
 				2E4B7A332C9A126A000A1B2C /* DataSources */,
 				2E4B7A342C9A126E000A1B2C /* Utils */,
+				2E4B7A4F2C9A12AB000A1B2C /* Assets.xcassets */,
 				2E4B7A272C9A1235000A1B2C /* SmartCoffee.xcdatamodeld */,
 				2E4B7A4E2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements */,
 			);
@@ -139,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				2E4B7A4A2C9A129E000A1B2C /* CoffeeDecisionEngine.swift */,
+				2E4B7A4E2C9A12AA000A1B2C /* ColorExtensions.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -201,6 +207,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E4B7A502C9A12AB000A1B2C /* Assets.xcassets in Resources */,
 				2E4B7A4D2C9A12A6000A1B2C /* SmartCoffeeApp.entitlements in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -217,6 +224,7 @@
 				2E4B7A472C9A1296000A1B2C /* CoffeeModels.swift in Sources */,
 				2E4B7A492C9A129A000A1B2C /* SleepData.swift in Sources */,
 				2E4B7A4B2C9A129E000A1B2C /* CoffeeDecisionEngine.swift in Sources */,
+				2E4B7A4F2C9A12AA000A1B2C /* ColorExtensions.swift in Sources */,
 				2E4B7A412C9A128A000A1B2C /* ESP32CommunicationManager.swift in Sources */,
 				2E4B7A432C9A128E000A1B2C /* HealthKitManager.swift in Sources */,
 				2E4B7A3B2C9A127E000A1B2C /* SettingsViewModel.swift in Sources */,
@@ -355,7 +363,6 @@
 		2E4B7A2C2C9A1235000A1B2C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SmartCoffeeApp/SmartCoffeeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -387,7 +394,6 @@
 		2E4B7A2D2C9A1235000A1B2C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SmartCoffeeApp/SmartCoffeeApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;

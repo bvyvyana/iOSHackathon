@@ -5,10 +5,9 @@ import UserNotifications
 /// ViewModel pentru SettingsView - gestionează toate setările aplicației
 @MainActor
 class SettingsViewModel: ObservableObject {
-    @Published var coffeePreferences = UserCoffeePreferences()
-    @Published var autoSettings = AutoModeSettings()
     @Published var notificationSettings = NotificationSettings()
     @Published var esp32Settings = ESP32ConnectionSettings()
+    @Published var awakeStatus = AwakeStatus.awake
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var validationErrors: [String] = []
@@ -20,6 +19,7 @@ class SettingsViewModel: ObservableObject {
     
     init() {
         setupObservers()
+        setupHealthKitIntegration()
     }
     
     // MARK: - Data Loading & Saving
@@ -29,17 +29,7 @@ class SettingsViewModel: ObservableObject {
         isLoading = true
         
         do {
-            // Load coffee preferences
-            if let data = userDefaults.data(forKey: "coffee_preferences"),
-               let preferences = try? JSONDecoder().decode(UserCoffeePreferences.self, from: data) {
-                coffeePreferences = preferences
-            }
             
-            // Load auto mode settings
-            if let data = userDefaults.data(forKey: "auto_mode_settings"),
-               let settings = try? JSONDecoder().decode(AutoModeSettings.self, from: data) {
-                autoSettings = settings
-            }
             
             // Load notification settings
             if let data = userDefaults.data(forKey: "notification_settings"),
@@ -53,6 +43,12 @@ class SettingsViewModel: ObservableObject {
                 esp32Settings = settings
             }
             
+            // Load awake status
+            if let data = userDefaults.data(forKey: "awake_status"),
+               let status = try? JSONDecoder().decode(AwakeStatus.self, from: data) {
+                awakeStatus = status
+            }
+            
         } catch {
             errorMessage = "Eroare la încărcarea setărilor: \(error.localizedDescription)"
         }
@@ -63,13 +59,7 @@ class SettingsViewModel: ObservableObject {
     /// Salvează toate setările
     func saveSettings() async {
         do {
-            // Save coffee preferences
-            let coffeeData = try JSONEncoder().encode(coffeePreferences)
-            userDefaults.set(coffeeData, forKey: "coffee_preferences")
             
-            // Save auto mode settings
-            let autoData = try JSONEncoder().encode(autoSettings)
-            userDefaults.set(autoData, forKey: "auto_mode_settings")
             
             // Save notification settings
             let notificationData = try JSONEncoder().encode(notificationSettings)
@@ -79,9 +69,11 @@ class SettingsViewModel: ObservableObject {
             let esp32Data = try JSONEncoder().encode(esp32Settings)
             userDefaults.set(esp32Data, forKey: "esp32_connection_settings")
             
+            // Save awake status
+            let awakeData = try JSONEncoder().encode(awakeStatus)
+            userDefaults.set(awakeData, forKey: "awake_status")
+            
             // Update last modified
-            coffeePreferences.lastUpdated = Date()
-            autoSettings.lastUpdated = Date()
             notificationSettings.lastUpdated = Date()
             esp32Settings.lastUpdated = Date()
             
@@ -100,23 +92,7 @@ class SettingsViewModel: ObservableObject {
     
     // MARK: - Specific Setting Updates
     
-    /// Actualizează preferințele de cafea
-    func updateCoffeePreferences(_ preferences: UserCoffeePreferences) {
-        coffeePreferences = preferences
-        
-        Task {
-            await saveSettings()
-        }
-    }
     
-    /// Actualizează setările modului automat
-    func updateAutoModeSettings(_ settings: AutoModeSettings) {
-        autoSettings = settings
-        
-        Task {
-            await saveSettings()
-        }
-    }
     
     /// Actualizează setările de notificări
     func updateNotificationSettings(_ settings: NotificationSettings) {
@@ -137,12 +113,32 @@ class SettingsViewModel: ObservableObject {
         }
     }
     
+    /// Actualizează statusul de treaz/dormit
+    func updateAwakeStatus(_ status: AwakeStatus) {
+        awakeStatus = status
+        
+        Task {
+            await saveSettings()
+        }
+        
+        // Notifică HealthKitManager despre schimbarea manuală
+        NotificationCenter.default.post(
+            name: .manualAwakeStatusChanged,
+            object: AwakeStatusChange(
+                oldStatus: awakeStatus,
+                newStatus: status,
+                confidence: 100.0,
+                timestamp: Date(),
+                detectionMethod: .manual,
+                source: .manual
+            )
+        )
+    }
+    
     // MARK: - Reset Functions
     
     /// Resetează toate setările la valorile implicite
     func resetToDefaults() {
-        coffeePreferences = UserCoffeePreferences()
-        autoSettings = AutoModeSettings()
         notificationSettings = NotificationSettings()
         esp32Settings = ESP32ConnectionSettings()
         
@@ -151,23 +147,7 @@ class SettingsViewModel: ObservableObject {
         }
     }
     
-    /// Resetează doar preferințele de cafea
-    func resetCoffeePreferences() {
-        coffeePreferences = UserCoffeePreferences()
-        
-        Task {
-            await saveSettings()
-        }
-    }
     
-    /// Resetează doar setările modului automat
-    func resetAutoModeSettings() {
-        autoSettings = AutoModeSettings()
-        
-        Task {
-            await saveSettings()
-        }
-    }
     
     /// Resetează doar setările ESP32
     func resetESP32Settings() {
@@ -184,23 +164,7 @@ class SettingsViewModel: ObservableObject {
     func validateSettings() -> [String] {
         var errors: [String] = []
         
-        // Validate coffee preferences
-        if coffeePreferences.maxCaffeinePerDay < 100 || coffeePreferences.maxCaffeinePerDay > 600 {
-            errors.append("Limita de cafeină trebuie să fie între 100-600mg")
-        }
         
-        if coffeePreferences.preferredStrength < 0.1 || coffeePreferences.preferredStrength > 1.0 {
-            errors.append("Intensitatea preferată trebuie să fie între 10-100%")
-        }
-        
-        // Validate auto mode settings
-        if autoSettings.countdownDuration < 10 || autoSettings.countdownDuration > 60 {
-            errors.append("Durata countdown trebuie să fie între 10-60 secunde")
-        }
-        
-        if autoSettings.wakeDetectionSensitivity < 0.3 || autoSettings.wakeDetectionSensitivity > 1.0 {
-            errors.append("Sensibilitatea detectării trebuie să fie între 30-100%")
-        }
         
         // Validate ESP32 settings
         errors.append(contentsOf: esp32Settings.validate())
@@ -223,7 +187,9 @@ class SettingsViewModel: ObservableObject {
         let startTime = Date()
         
         do {
-            let url = URL(string: esp32Settings.endpoint(for: "test"))!
+            // Folosește același endpoint ca în Home (/relay)
+            let testURL = esp32Settings.fullURL + "/relay"
+            let url = URL(string: testURL)!
             var request = URLRequest(url: url)
             request.timeoutInterval = esp32Settings.connectionTimeout
             request.httpMethod = "GET"
@@ -234,10 +200,9 @@ class SettingsViewModel: ObservableObject {
             
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
-                    // Încearcă să parseze răspunsul JSON
-                    if let jsonData = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let status = jsonData["status"] as? String,
-                       status == "connected" {
+                    // Verifică dacă răspunsul este valid (orice răspuns de la /relay)
+                    if let responseString = String(data: data, encoding: .utf8),
+                       !responseString.isEmpty {
                         
                         // Salvează ultimele informații de conexiune reușită
                         esp32Settings.lastSuccessfulConnection = Date()
@@ -247,8 +212,8 @@ class SettingsViewModel: ObservableObject {
                             success: true,
                             responseTime: responseTime,
                             statusCode: httpResponse.statusCode,
-                            message: "Conexiunea a fost stabilită cu succes",
-                            deviceInfo: jsonData
+                            message: "ESP32 Smart Coffee detectat și funcțional",
+                            deviceInfo: ["response": responseString]
                         )
                         
                         await saveSettings()
@@ -257,7 +222,7 @@ class SettingsViewModel: ObservableObject {
                             success: false,
                             responseTime: responseTime,
                             statusCode: httpResponse.statusCode,
-                            message: "ESP32 a răspuns, dar cu format neașteptat",
+                            message: "ESP32 a răspuns, dar cu răspuns gol",
                             deviceInfo: nil
                         )
                     }
@@ -292,6 +257,7 @@ class SettingsViewModel: ObservableObject {
         // TODO: Implementare scan subnet local
         // Pentru moment, returnăm câteva IP-uri comune
         let commonIPs = [
+            "192.168.81.60",  // IP-ul principal folosit de ESP32CommunicationManager
             "192.168.1.100",
             "192.168.1.101",
             "192.168.1.102",
@@ -350,27 +316,7 @@ class SettingsViewModel: ObservableObject {
     // MARK: - Observers
     
     private func setupObservers() {
-        // Observer pentru schimbări în preferințele de cafea
-        $coffeePreferences
-            .dropFirst()
-            .debounce(for: .seconds(1), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                Task {
-                    await self?.saveSettings()
-                }
-            }
-            .store(in: &cancellables)
         
-        // Observer pentru schimbări în setările auto
-        $autoSettings
-            .dropFirst()
-            .debounce(for: .seconds(1), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                Task {
-                    await self?.saveSettings()
-                }
-            }
-            .store(in: &cancellables)
         
         // Observer pentru schimbări în setările de notificări
         $notificationSettings
@@ -394,31 +340,79 @@ class SettingsViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Observer pentru schimbări în statusul de treaz/dormit
+        $awakeStatus
+            .dropFirst()
+            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.saveSettings()
+                }
+            }
+            .store(in: &cancellables)
     }
+    
+    // MARK: - HealthKit Integration
+    
+    /// Configurează integrarea cu HealthKit pentru detectarea automată a statusului
+    private func setupHealthKitIntegration() {
+        // Observer pentru schimbările de status detectate automat de HealthKit
+        NotificationCenter.default.publisher(for: .awakeStatusChanged)
+            .sink { [weak self] notification in
+                if let statusChange = notification.object as? AwakeStatusChange {
+                    self?.handleAutomaticStatusChange(statusChange)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// Configurează sincronizarea cu HealthKitManager
+    func setupHealthKitManagerSync(_ healthKitManager: HealthKitManager) {
+        // Observer pentru schimbările din HealthKitManager
+        healthKitManager.$currentAwakeStatus
+            .dropFirst() // Ignoră valoarea inițială
+            .sink { [weak self] newStatus in
+                // Actualizează statusul local doar dacă e diferit
+                if self?.awakeStatus != newStatus {
+                    self?.awakeStatus = newStatus
+                    print("🔄 SettingsViewModel synced with HealthKitManager: \(newStatus.displayName)")
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    /// Gestionează schimbarea automată a statusului detectată de HealthKit
+    private func handleAutomaticStatusChange(_ statusChange: AwakeStatusChange) {
+        // Actualizează statusul local
+        awakeStatus = statusChange.newStatus
+        
+        print("🔄 HealthKit detected status change: \(statusChange.description)")
+        
+        // Salvează automat noul status
+        Task {
+            await saveSettings()
+        }
+        
+        // Notifică utilizatorul despre schimbarea automată (opțional)
+        if statusChange.confidence > 80.0 {
+            // Poți adăuga aici o notificare push sau un alert
+            print("📱 High confidence status change detected: \(statusChange.newStatus.displayName)")
+        }
+    }
+    
+    /// Sincronizează statusul cu HealthKitManager
+    func syncWithHealthKitManager(_ healthKitManager: HealthKitManager) {
+        // Încarcă statusul din HealthKitManager
+        awakeStatus = healthKitManager.currentAwakeStatus
+        
+        print("🔄 Synced awake status with HealthKitManager: \(awakeStatus.displayName)")
+    }
+    
 }
 
 // MARK: - Supporting Models
 
-/// Setări pentru modul automat
-struct AutoModeSettings: Codable {
-    var autoModeEnabled: Bool
-    var requireConfirmation: Bool
-    var autoOnlyOnWeekdays: Bool
-    var countdownDuration: TimeInterval
-    var wakeDetectionSensitivity: Double
-    var preferredWakeTime: Date
-    var lastUpdated: Date
-    
-    init() {
-        self.autoModeEnabled = true
-        self.requireConfirmation = true
-        self.autoOnlyOnWeekdays = false
-        self.countdownDuration = 30.0
-        self.wakeDetectionSensitivity = 0.75
-        self.preferredWakeTime = Calendar.current.date(bySettingHour: 7, minute: 30, second: 0, of: Date()) ?? Date()
-        self.lastUpdated = Date()
-    }
-}
 
 /// Setări pentru notificări
 struct NotificationSettings: Codable {
@@ -488,17 +482,7 @@ class SettingsManager {
         
         var settings: [String: Any] = [:]
         
-        // Export coffee preferences
-        if let data = userDefaults.data(forKey: "coffee_preferences"),
-           let preferences = try? JSONDecoder().decode(UserCoffeePreferences.self, from: data) {
-            settings["coffee_preferences"] = try? JSONEncoder().encode(preferences).base64EncodedString()
-        }
         
-        // Export auto mode settings
-        if let data = userDefaults.data(forKey: "auto_mode_settings"),
-           let autoSettings = try? JSONDecoder().decode(AutoModeSettings.self, from: data) {
-            settings["auto_mode_settings"] = try? JSONEncoder().encode(autoSettings).base64EncodedString()
-        }
         
         // Export notification settings
         if let data = userDefaults.data(forKey: "notification_settings"),
@@ -516,17 +500,7 @@ class SettingsManager {
     func importSettings(from dictionary: [String: Any]) throws {
         let userDefaults = UserDefaults.standard
         
-        // Import coffee preferences
-        if let encodedString = dictionary["coffee_preferences"] as? String,
-           let data = Data(base64Encoded: encodedString) {
-            userDefaults.set(data, forKey: "coffee_preferences")
-        }
         
-        // Import auto mode settings
-        if let encodedString = dictionary["auto_mode_settings"] as? String,
-           let data = Data(base64Encoded: encodedString) {
-            userDefaults.set(data, forKey: "auto_mode_settings")
-        }
         
         // Import notification settings
         if let encodedString = dictionary["notification_settings"] as? String,
@@ -542,19 +516,7 @@ class SettingsManager {
     func validateSettingsIntegrity() -> Bool {
         let userDefaults = UserDefaults.standard
         
-        // Check if coffee preferences are valid
-        if let data = userDefaults.data(forKey: "coffee_preferences") {
-            guard (try? JSONDecoder().decode(UserCoffeePreferences.self, from: data)) != nil else {
-                return false
-            }
-        }
         
-        // Check if auto settings are valid
-        if let data = userDefaults.data(forKey: "auto_mode_settings") {
-            guard (try? JSONDecoder().decode(AutoModeSettings.self, from: data)) != nil else {
-                return false
-            }
-        }
         
         // Check if notification settings are valid
         if let data = userDefaults.data(forKey: "notification_settings") {
@@ -570,23 +532,7 @@ class SettingsManager {
     func repairCorruptedSettings() {
         let userDefaults = UserDefaults.standard
         
-        // Reset coffee preferences if corrupted
-        if let data = userDefaults.data(forKey: "coffee_preferences"),
-           (try? JSONDecoder().decode(UserCoffeePreferences.self, from: data)) == nil {
-            let defaultPreferences = UserCoffeePreferences()
-            if let encodedData = try? JSONEncoder().encode(defaultPreferences) {
-                userDefaults.set(encodedData, forKey: "coffee_preferences")
-            }
-        }
         
-        // Reset auto settings if corrupted
-        if let data = userDefaults.data(forKey: "auto_mode_settings"),
-           (try? JSONDecoder().decode(AutoModeSettings.self, from: data)) == nil {
-            let defaultSettings = AutoModeSettings()
-            if let encodedData = try? JSONEncoder().encode(defaultSettings) {
-                userDefaults.set(encodedData, forKey: "auto_mode_settings")
-            }
-        }
         
         // Reset notification settings if corrupted
         if let data = userDefaults.data(forKey: "notification_settings"),

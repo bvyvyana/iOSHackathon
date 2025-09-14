@@ -162,4 +162,5 @@ extension Notification.Name {
     static let esp32ConnectionChanged = Notification.Name("esp32ConnectionChanged")
     static let coffeeOrderCompleted = Notification.Name("coffeeOrderCompleted")
     static let userPreferencesChanged = Notification.Name("userPreferencesChanged")
+    static let manualAwakeStatusChanged = Notification.Name("manualAwakeStatusChanged")
 }

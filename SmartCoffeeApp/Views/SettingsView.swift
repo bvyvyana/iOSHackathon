@@ -8,14 +8,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                // Coffee Preferences Section
-                Section("Preferințe Cafea") {
-                    CoffeePreferencesSection(preferences: $viewModel.coffeePreferences)
-                }
-                
-                // Auto Mode Section
-                Section("Mod Automat") {
-                    AutoModeSection(settings: $viewModel.autoSettings)
+                // Awake Status Section
+                Section("Status Personal") {
+                    AwakeStatusSection(status: $viewModel.awakeStatus)
                 }
                 
                 // ESP32 Connection Section
@@ -64,159 +59,14 @@ struct SettingsView: View {
         .task {
             await viewModel.loadSettings()
         }
-    }
-}
-
-// MARK: - Coffee Preferences Section
-
-struct CoffeePreferencesSection: View {
-    @Binding var preferences: UserCoffeePreferences
-    
-    var body: some View {
-        Group {
-            // Preferred Coffee Type
-            HStack {
-                Text("Tip Preferat")
-                Spacer()
-                Picker("Tip Cafea", selection: $preferences.preferredType) {
-                    Text("Automată").tag(nil as CoffeeType?)
-                    ForEach(CoffeeType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type as CoffeeType?)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-            
-            // Coffee Strength
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Intensitate Preferată")
-                    Spacer()
-                    Text("\(Int(preferences.preferredStrength * 100))%")
-                        .foregroundColor(.secondary)
-                }
-                
-                Slider(value: $preferences.preferredStrength, in: 0.1...1.0, step: 0.1) {
-                    Text("Intensitate")
-                } minimumValueLabel: {
-                    Text("10%")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } maximumValueLabel: {
-                    Text("100%")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .accentColor(.brown)
-            }
-            
-            // Daily Caffeine Limit
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Limită Zilnică Cafeină")
-                    Spacer()
-                    Text("\(Int(preferences.maxCaffeinePerDay)) mg")
-                        .foregroundColor(.secondary)
-                }
-                
-                Slider(value: $preferences.maxCaffeinePerDay, in: 100...600, step: 50) {
-                    Text("Cafeină")
-                } minimumValueLabel: {
-                    Text("100mg")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } maximumValueLabel: {
-                    Text("600mg")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .accentColor(.orange)
-                
-                Text("Recomandat: maxim 400mg pe zi")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+        .onAppear {
+            // Configurează sincronizarea cu HealthKitManager
+            viewModel.setupHealthKitManagerSync(healthKitManager)
         }
     }
 }
 
-// MARK: - Auto Mode Section
 
-struct AutoModeSection: View {
-    @Binding var settings: AutoModeSettings
-    
-    var body: some View {
-        Group {
-            // Enable Auto Mode
-            Toggle("Activează Modul Automat", isOn: $settings.autoModeEnabled)
-                .toggleStyle(SwitchToggleStyle(tint: .green))
-            
-            if settings.autoModeEnabled {
-                // Require Confirmation
-                Toggle("Necesită Confirmare", isOn: $settings.requireConfirmation)
-                
-                // Auto Only Weekdays
-                Toggle("Doar în Zilele de Lucru", isOn: $settings.autoOnlyOnWeekdays)
-                
-                // Countdown Duration
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Durată Countdown")
-                        Spacer()
-                        Text("\(Int(settings.countdownDuration))s")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Slider(value: $settings.countdownDuration, in: 10...60, step: 5) {
-                        Text("Countdown")
-                    } minimumValueLabel: {
-                        Text("10s")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } maximumValueLabel: {
-                        Text("60s")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .accentColor(.blue)
-                }
-                
-                // Wake Detection Sensitivity
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Sensibilitate Detectare")
-                        Spacer()
-                        Text("\(Int(settings.wakeDetectionSensitivity * 100))%")
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Slider(value: $settings.wakeDetectionSensitivity, in: 0.3...1.0, step: 0.1) {
-                        Text("Sensibilitate")
-                    } minimumValueLabel: {
-                        Text("Scăzută")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } maximumValueLabel: {
-                        Text("Ridicată")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .accentColor(.purple)
-                    
-                    Text("Sensibilitate ridicată = detectare mai rapidă, dar posibile alarme false")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Preferred Wake Time
-                DatePicker("Ora Preferată de Trezire", 
-                          selection: $settings.preferredWakeTime, 
-                          displayedComponents: .hourAndMinute)
-                .datePickerStyle(.compact)
-            }
-        }
-    }
-}
 
 // MARK: - ESP32 Connection Section
 
@@ -234,11 +84,11 @@ struct ESP32ConnectionSection: View {
                 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(esp32Manager.isConnected ? .green : Color.red)
+                        .fill(esp32Manager.isConnected ? Color.primaryGreen : Color.primaryRed)
                         .frame(width: 10, height: 10)
                     
                     Text(esp32Manager.isConnected ? "Conectat" : "Deconectat")
-                        .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
+                        .foregroundColor(esp32Manager.isConnected ? Color.primaryGreen : Color.primaryRed)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -264,7 +114,7 @@ struct ESP32ConnectionSection: View {
                     Text("Status Conexiune")
                     Spacer()
                     Text(esp32Manager.isConnected ? "Conectat" : "Deconectat")
-                        .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
+                        .foregroundColor(esp32Manager.isConnected ? Color.primaryGreen : Color.primaryRed)
                 }
                 
                 if esp32Manager.isConnected {
@@ -326,11 +176,11 @@ struct HealthKitSection: View {
                 
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(healthKitManager.isAuthorized ? .green : Color.red)
+                        .fill(healthKitManager.isAuthorized ? Color.primaryGreen : Color.primaryRed)
                         .frame(width: 10, height: 10)
                     
                     Text(healthKitManager.isAuthorized ? "Autorizat" : "Neautorizat")
-                        .foregroundColor(healthKitManager.isAuthorized ? .green : Color.red)
+                        .foregroundColor(healthKitManager.isAuthorized ? Color.primaryGreen : Color.primaryRed)
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -359,7 +209,7 @@ struct HealthKitSection: View {
                 Spacer()
                 
                 Text(healthKitManager.isMonitoringWake ? "Activă" : "Inactivă")
-                    .foregroundColor(healthKitManager.isMonitoringWake ? .green : .secondary)
+                    .foregroundColor(healthKitManager.isMonitoringWake ? Color.primaryGreen : .secondary)
             }
             
             if healthKitManager.isAuthorized {
@@ -380,12 +230,12 @@ struct HealthKitSection: View {
                     Button("Oprește Monitorizarea") {
                         healthKitManager.stopWakeDetection()
                     }
-                    .foregroundColor(Color.red)
+                    .foregroundColor(Color.primaryRed)
                 } else {
                     Button("Pornește Monitorizarea") {
                         healthKitManager.startWakeDetection()
                     }
-                    .foregroundColor(.green)
+                    .foregroundColor(Color.primaryGreen)
                 }
             }
             
@@ -490,7 +340,7 @@ struct AdvancedSettingsSection: View {
                 }
             }
             .disabled(cleanupInProgress)
-            .foregroundColor(.orange)
+            .foregroundColor(Color.primaryOrange)
             
             if let result = cleanupResult {
                 Text(result)
@@ -501,12 +351,12 @@ struct AdvancedSettingsSection: View {
             Button("Resetare Setări") {
                 showingResetAlert = true
             }
-                                .foregroundColor(Color.red)
+                                .foregroundColor(Color.primaryRed)
             
             Button("Resetare Date") {
                 // Reset all data
             }
-                                .foregroundColor(Color.red)
+                                .foregroundColor(Color.primaryRed)
         }
         .alert("Curățare Date Vechi", isPresented: $showingCleanupAlert) {
             Button("Anulare", role: .cancel) { }
@@ -559,7 +409,7 @@ struct ManualIPConfigurationView: View {
         NavigationView {
             Form {
                 Section("Adresă IP ESP32") {
-                    TextField("192.168.1.100", text: $ipAddress)
+                    TextField("192.168.81.60", text: $ipAddress)
                         .keyboardType(.numbersAndPunctuation)
                     
                     Text("Introduceți adresa IP a controllerului ESP32 din rețeaua locală")
@@ -751,12 +601,12 @@ struct ESP32ConnectionAdvancedSection: View {
                     Spacer()
                     if !validationErrors.isEmpty {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
+                            .foregroundColor(Color.primaryOrange)
                             .font(.caption)
                     }
                 }
                 
-                TextField("http://192.168.1.100", text: $tempURL)
+                TextField("http://192.168.81.60", text: $tempURL)
                     .textFieldStyle(.roundedBorder)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
@@ -773,7 +623,7 @@ struct ESP32ConnectionAdvancedSection: View {
                         ForEach(validationErrors, id: \.self) { error in
                             Text("• \(error)")
                                 .font(.caption)
-                                .foregroundColor(Color.red)
+                                .foregroundColor(Color.primaryRed)
                         }
                     }
                     .padding(.top, 4)
@@ -838,7 +688,7 @@ struct ESP32ConnectionAdvancedSection: View {
             Button("Resetare Setări ESP32") {
                 showingResetAlert = true
             }
-                                .foregroundColor(Color.red)
+                                .foregroundColor(Color.primaryRed)
             .alert("Resetare Setări ESP32", isPresented: $showingResetAlert) {
                 Button("Anulare", role: .cancel) { }
                 Button("Resetare", role: .destructive) {
@@ -869,7 +719,7 @@ struct ConnectionTestResultView: View {
             
             Text(result.message)
                 .font(.caption)
-                .foregroundColor(result.success ? .green : Color.red)
+                .foregroundColor(result.success ? Color.primaryGreen : Color.primaryRed)
             
             if let statusCode = result.statusCode {
                 Text("HTTP Status: \(statusCode)")
@@ -899,11 +749,11 @@ struct ConnectionTestResultView: View {
             }
         }
         .padding()
-        .background(result.success ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+        .background(result.success ? Color.primaryGreen.opacity(0.1) : Color.primaryRed.opacity(0.1))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(result.success ? Color.green.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1)
+                .stroke(result.success ? Color.primaryGreen.opacity(0.3) : Color.primaryRed.opacity(0.3), lineWidth: 1)
         )
     }
 }
@@ -964,7 +814,7 @@ struct AdvancedESP32Settings: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                .accentColor(.orange)
+                .accentColor(Color.primaryOrange)
             }
             
             // Retry Attempts
@@ -1022,6 +872,126 @@ struct AdvancedESP32Settings: View {
         formatter.dateStyle = .short
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - Awake Status Section
+
+struct AwakeStatusSection: View {
+    @Binding var status: AwakeStatus
+    @EnvironmentObject private var healthKitManager: HealthKitManager
+    @StateObject private var settingsViewModel = SettingsViewModel()
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Current Status Display
+            HStack {
+                Image(systemName: status.icon)
+                    .font(.title2)
+                    .foregroundColor(status.color)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Status Actual")
+                        .font(.headline)
+                    
+                    Text(status.displayName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(status.color)
+                    
+                    Text(status.description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Text(status.emoji)
+                    .font(.title)
+            }
+            .padding()
+            .background(status.color.opacity(0.1))
+            .cornerRadius(12)
+            
+            // Status Picker
+            Picker("Status Personal", selection: $status) {
+                ForEach(AwakeStatus.allCases, id: \.self) { awakeStatus in
+                    HStack {
+                        Image(systemName: awakeStatus.icon)
+                        Text(awakeStatus.displayName)
+                        Text(awakeStatus.emoji)
+                    }
+                    .tag(awakeStatus)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: status) { newStatus in
+                settingsViewModel.updateAwakeStatus(newStatus)
+            }
+            
+            // Auto Detection Status
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(Color.primaryRed)
+                        .font(.title3)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Detectare Automată")
+                            .font(.headline)
+                        
+                        Text("Monitorizare continuă cu HealthKit")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color.primaryGreen)
+                        .font(.title3)
+                }
+                
+                HStack {
+                    Image(systemName: "clock.fill")
+                        .foregroundColor(Color.primaryBlue)
+                        .font(.caption)
+                    
+                    Text("Verifică la fiecare 1 minut")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                }
+            }
+            .padding()
+            .background(Color.primaryGreen.opacity(0.1))
+            .cornerRadius(12)
+            
+            // Status Info
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Informații")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                
+                if status == .awake {
+                    Text("• Aplicația va recomanda cafea pe baza datelor de somn")
+                    Text("• Comenzile automate sunt active")
+                    Text("• Poți comanda manual cafea oricând")
+                } else {
+                    Text("• Aplicația va detecta automat trezirea")
+                    Text("• Comenzile automate sunt suspendate")
+                    Text("• Vei primi notificări când te trezești")
+                }
+                
+                Text("• Statusul se actualizează automat pe baza datelor HealthKit")
+                Text("• Monitorizarea este permanent activă")
+                Text("• Nu poți dezactiva detectarea automată")
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .padding(.horizontal, 8)
+        }
     }
 }
 

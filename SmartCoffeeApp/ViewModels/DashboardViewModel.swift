@@ -465,10 +465,10 @@ enum PerformanceStatus {
     
     var color: Color {
         switch self {
-        case .excellent: return .green
-        case .good: return .blue
-        case .warning: return .orange
-        case .poor: return Color.red
+        case .excellent: return Color.primaryGreen
+        case .good: return Color.primaryBlue
+        case .warning: return Color.primaryOrange
+        case .poor: return Color.primaryRed
         }
     }
 }

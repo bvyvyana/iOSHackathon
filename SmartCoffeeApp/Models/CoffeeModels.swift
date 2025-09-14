@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import SwiftUI
 
 /// Tipurile de cafea disponibile
 enum CoffeeType: String, CaseIterable, Codable {
@@ -277,6 +278,66 @@ struct DailyCoffeeStats {
     }
 }
 
+/// Notificare pentru comanda automată de cafea programată
+struct AutoCoffeeScheduled {
+    let recommendation: CoffeeRecommendation
+    let scheduledTime: Date
+    let delay: TimeInterval
+    
+    var timeRemaining: TimeInterval {
+        let elapsed = Date().timeIntervalSince(scheduledTime)
+        return max(0, delay - elapsed)
+    }
+    
+    var isReady: Bool {
+        return timeRemaining <= 0
+    }
+}
+
+/// Comanda automată de cafea cu toate detaliile
+struct AutoCoffeeCommand {
+    let type: CoffeeType
+    let trigger: TriggerType
+    let sleepData: SleepData
+    let confidence: Double
+    let timestamp: Date
+    
+    init(type: CoffeeType, trigger: TriggerType, sleepData: SleepData, confidence: Double) {
+        self.type = type
+        self.trigger = trigger
+        self.sleepData = sleepData
+        self.confidence = confidence
+        self.timestamp = Date()
+    }
+}
+
+/// Rezultatul comenzii automate de cafea
+struct AutoCoffeeResult {
+    let success: Bool
+    let type: CoffeeType
+    let response: CoffeeResponse?
+    let timestamp: Date
+    let error: Error?
+    
+    init(success: Bool, type: CoffeeType, response: CoffeeResponse?, timestamp: Date, error: Error? = nil) {
+        self.success = success
+        self.type = type
+        self.response = response
+        self.timestamp = timestamp
+        self.error = error
+    }
+    
+    var message: String {
+        if success {
+            return "Cafea \(type.displayName) comandată cu succes!"
+        } else if let error = error {
+            return "Eroare la comandarea cafelei: \(error.localizedDescription)"
+        } else {
+            return "Comanda de cafea \(type.displayName) a eșuat"
+        }
+    }
+}
+
 /// Setările pentru conexiunea ESP32
 struct ESP32ConnectionSettings: Codable {
     var baseURL: String
@@ -292,7 +353,7 @@ struct ESP32ConnectionSettings: Codable {
     var lastUpdated: Date
     
     init() {
-        self.baseURL = "http://192.168.1.100"
+        self.baseURL = "http://192.168.81.60"
         self.port = 80
         self.discoveryEnabled = true
         self.connectionTimeout = 5.0
@@ -427,6 +488,57 @@ enum WiFiSignalQuality {
 
 // MARK: - ESP32 Status Models
 
+
+/// Statusul utilizatorului - treaz sau dormit
+enum AwakeStatus: String, CaseIterable, Codable {
+    case awake = "awake"
+    case sleeping = "sleeping"
+    
+    var displayName: String {
+        switch self {
+        case .awake:
+            return "Treaz"
+        case .sleeping:
+            return "Dorm"
+        }
+    }
+    
+    var emoji: String {
+        switch self {
+        case .awake:
+            return "😊"
+        case .sleeping:
+            return "😴"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .awake:
+            return "sun.max.fill"
+        case .sleeping:
+            return "moon.zzz.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .awake:
+            return Color.primaryOrange
+        case .sleeping:
+            return Color.primaryBlue
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .awake:
+            return "Ești treaz și gata de cafea!"
+        case .sleeping:
+            return "Dormi liniștit, aplicația va detecta trezirea"
+        }
+    }
+}
 
 /// Metrici de sănătate ESP32
 struct ESP32HealthMetrics: Codable {

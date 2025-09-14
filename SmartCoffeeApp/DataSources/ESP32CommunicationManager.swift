@@ -37,6 +37,7 @@ class ESP32CommunicationManager: ObservableObject {
         self.session = URLSession(configuration: config)
         
         startNetworkMonitoring()
+        setupNotificationObservers()
         
         // Load saved performance data
         Task {
@@ -46,6 +47,86 @@ class ESP32CommunicationManager: ObservableObject {
     
     deinit {
         stopNetworkMonitoring()
+    }
+    
+    // MARK: - Notification Observers
+    
+    private func setupNotificationObservers() {
+        // Observer pentru comenzile automate de cafea
+        NotificationCenter.default.publisher(for: .executeAutoCoffee)
+            .sink { [weak self] notification in
+                if let command = notification.object as? AutoCoffeeCommand {
+                    Task { @MainActor in
+                        await self?.handleAutoCoffeeCommand(command)
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    /// Gestionează comanda automată de cafea primită prin notificare
+    private func handleAutoCoffeeCommand(_ command: AutoCoffeeCommand) async {
+        print("🤖 Processing auto-coffee command: \(command.type.displayName)")
+        
+        // Verifică dacă ESP32 este conectat
+        guard isConnected else {
+            print("❌ ESP32 not connected, cannot execute auto-coffee")
+            return
+        }
+        
+        do {
+            // Trimite comanda către ESP32
+            let response = try await makeCoffee(
+                type: command.type,
+                trigger: command.trigger,
+                sleepData: command.sleepData
+            )
+            
+            if response.isSuccess {
+                print("✅ Auto-coffee executed successfully: \(command.type.displayName)")
+                
+                // Notifică aplicația despre succes
+                NotificationCenter.default.post(
+                    name: .autoCoffeeCompleted,
+                    object: AutoCoffeeResult(
+                        success: true,
+                        type: command.type,
+                        response: response,
+                        timestamp: Date()
+                    )
+                )
+            } else {
+                print("❌ Auto-coffee failed: \(response.message)")
+                
+                // Notifică aplicația despre eșec
+                NotificationCenter.default.post(
+                    name: .autoCoffeeCompleted,
+                    object: AutoCoffeeResult(
+                        success: false,
+                        type: command.type,
+                        response: response,
+                        timestamp: Date()
+                    )
+                )
+            }
+            
+        } catch {
+            print("💥 Auto-coffee error: \(error.localizedDescription)")
+            
+            // Notifică aplicația despre eroare
+            NotificationCenter.default.post(
+                name: .autoCoffeeCompleted,
+                object: AutoCoffeeResult(
+                    success: false,
+                    type: command.type,
+                    response: nil,
+                    timestamp: Date(),
+                    error: error
+                )
+            )
+        }
     }
     
     // MARK: - Network Monitoring
@@ -560,4 +641,5 @@ struct EmptyBody: Codable {}
 
 extension Notification.Name {
     static let esp32PerformanceUpdated = Notification.Name("esp32PerformanceUpdated")
+    static let autoCoffeeCompleted = Notification.Name("autoCoffeeCompleted")
 }

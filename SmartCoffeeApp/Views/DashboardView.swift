@@ -123,7 +123,7 @@ struct StatCard: View {
             HStack {
                 Image(systemName: icon)
                     .font(.title2)
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color.primaryBlue)
                 
                 Spacer()
                 
@@ -156,8 +156,8 @@ enum ChangeType {
     
     var color: Color {
         switch self {
-        case .positive: return .green
-        case .negative: return Color.red
+        case .positive: return Color.primaryGreen
+        case .negative: return Color.primaryRed
         case .neutral: return .gray
         }
     }
@@ -196,7 +196,7 @@ struct SleepTrendsChart: View {
                     ForEach(0..<7) { day in
                         VStack {
                             Rectangle()
-                                .fill(.blue.gradient)
+                                .fill(Color.primaryBlue.gradient)
                                 .frame(width: 30, height: CGFloat.random(in: 40...120))
                             
                             Text("L\(day + 1)")
@@ -253,13 +253,13 @@ struct CoffeeConsumptionChart: View {
                             type: .espressoLung, 
                             count: coffeeStats.espressoLungCount, 
                             percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups) * 100) : 0, 
-                            color: .orange
+                            color: Color.primaryOrange
                         )
                         CoffeeTypeRow(
                             type: .espressoScurt, 
                             count: coffeeStats.espressoScurtCount, 
                             percentage: coffeeStats.totalCups > 0 ? Int(Double(coffeeStats.espressoScurtCount) / Double(coffeeStats.totalCups) * 100) : 0, 
-                            color: Color.red
+                            color: Color.primaryRed
                         )
                     }
                     
@@ -277,13 +277,13 @@ struct CoffeeConsumptionChart: View {
                             
                             Circle()
                                 .trim(from: 0, to: espressoLungPercentage)
-                                .stroke(.orange, lineWidth: 20)
+                                .stroke(Color.primaryOrange, lineWidth: 20)
                                 .frame(width: 80, height: 80)
                                 .rotationEffect(.degrees(-90))
                             
                             Circle()
                                 .trim(from: 0, to: espressoScurtPercentage)
-                                .stroke(Color.red, lineWidth: 20)
+                                .stroke(Color.primaryRed, lineWidth: 20)
                                 .frame(width: 60, height: 60)
                                 .rotationEffect(.degrees(Double(coffeeStats.espressoLungCount) / Double(coffeeStats.totalCups) * 360 - 90))
                         }

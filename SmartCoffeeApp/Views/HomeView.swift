@@ -1,9 +1,20 @@
 import SwiftUI
+import Combine
+
+/// Statusul comenzii automate de cafea
+enum AutoCoffeeStatus {
+    case none
+    case scheduled(AutoCoffeeScheduled)
+    case executing
+    case completed(AutoCoffeeResult)
+    case failed(AutoCoffeeResult)
+}
 
 struct HomeView: View {
     @EnvironmentObject private var healthKitManager: HealthKitManager
     @EnvironmentObject private var esp32Manager: ESP32CommunicationManager
     @StateObject private var viewModel = HomeViewModel()
+    @State private var autoCoffeeStatus: AutoCoffeeStatus = .none
     
     var body: some View {
         NavigationView {
@@ -12,6 +23,16 @@ struct HomeView: View {
                     
                     // Header cu status conexiune
                     ConnectionStatusView()
+                    
+                    // Awake Status Card
+                    AwakeStatusCard()
+                    
+                    // Auto Coffee Status Card
+                    if case .none = autoCoffeeStatus {
+                        EmptyView()
+                    } else {
+                        AutoCoffeeStatusCard(status: autoCoffeeStatus)
+                    }
                     
                     // Sleep Summary Card
                     if let sleepData = healthKitManager.currentSleepData {
@@ -49,6 +70,24 @@ struct HomeView: View {
                 print("Error loading initial data: \(error)")
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .autoCoffeeScheduled)) { notification in
+            if let scheduled = notification.object as? AutoCoffeeScheduled {
+                autoCoffeeStatus = .scheduled(scheduled)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .executeAutoCoffee)) { _ in
+            autoCoffeeStatus = .executing
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .autoCoffeeCompleted)) { notification in
+            if let result = notification.object as? AutoCoffeeResult {
+                autoCoffeeStatus = result.success ? .completed(result) : .failed(result)
+                
+                // Resetează statusul după 5 secunde
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    autoCoffeeStatus = .none
+                }
+            }
+        }
     }
 }
 
@@ -60,13 +99,13 @@ struct ConnectionStatusView: View {
     var body: some View {
         HStack {
             Image(systemName: esp32Manager.isConnected ? "wifi" : "wifi.slash")
-                .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
+                .foregroundColor(esp32Manager.isConnected ? Color.primaryGreen : Color.primaryRed)
                 .font(.title2)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(esp32Manager.isConnected ? "ESP32 Conectat" : "ESP32 Offline")
                     .font(.headline)
-                    .foregroundColor(esp32Manager.isConnected ? .green : Color.red)
+                    .foregroundColor(esp32Manager.isConnected ? Color.primaryGreen : Color.primaryRed)
                 
                 if let error = esp32Manager.connectionError {
                     Text(error)
@@ -168,7 +207,7 @@ struct SleepMetricView: View {
         VStack(spacing: 4) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.blue)
+                .foregroundColor(Color.primaryBlue)
             
             Text(value)
                 .font(.headline)
@@ -200,7 +239,7 @@ struct SleepStagesView: View {
             GeometryReader { geometry in
                 HStack(spacing: 0) {
                     Rectangle()
-                        .fill(.blue)
+                        .fill(Color.primaryBlue)
                         .frame(width: geometry.size.width * deepPercent / 100)
                     
                     Rectangle()
@@ -216,7 +255,7 @@ struct SleepStagesView: View {
             .cornerRadius(4)
             
             HStack(spacing: 16) {
-                LegendItem(color: .blue, label: "Profund", value: "\(Int(deepPercent))%")
+                LegendItem(color: Color.primaryBlue, label: "Profund", value: "\(Int(deepPercent))%")
                 LegendItem(color: .purple, label: "REM", value: "\(Int(remPercent))%")
                 LegendItem(color: .gray, label: "Ușor", value: "\(Int(lightPercent))%")
             }
@@ -318,7 +357,7 @@ struct CoffeeRecommendationContent: View {
                     Text("\(Int(recommendation.confidence * 100))%")
                         .font(.headline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Color.primaryGreen)
                 }
             }
             
@@ -355,7 +394,7 @@ struct CoffeeRecommendationContent: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(esp32Manager.isConnected ? .blue : .orange)
+                .background(esp32Manager.isConnected ? Color.primaryBlue : Color.primaryOrange)
                 .foregroundColor(.white)
                 .cornerRadius(10)
             }
@@ -408,7 +447,7 @@ struct SleepDataPlaceholder: View {
             HStack {
                 Image(systemName: "moon.zzz.fill")
                     .font(.title)
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color.primaryBlue)
                 
                 VStack(alignment: .leading) {
                     Text("Date de somn indisponibile")
@@ -460,7 +499,7 @@ struct QuickActionsView: View {
                 QuickActionButton(
                     title: "Latte",
                     icon: "🥛",
-                    color: .brown
+                    color: .coffeeBrown
                 ) {
                     await orderQuickCoffee(.latte)
                 }
@@ -468,7 +507,7 @@ struct QuickActionsView: View {
                 QuickActionButton(
                     title: "Espresso",
                     icon: "☕️",
-                    color: .orange
+                    color: Color.primaryOrange
                 ) {
                     await orderQuickCoffee(.espressoLung)
                 }
@@ -476,7 +515,7 @@ struct QuickActionsView: View {
                 QuickActionButton(
                     title: "Shot",
                     icon: "⚡️",
-                    color: Color.red
+                    color: Color.primaryRed
                 ) {
                     await orderQuickCoffee(.espressoScurt)
                 }
@@ -612,10 +651,174 @@ enum ActivityStatus {
     
     var color: Color {
         switch self {
-        case .success: return .green
-        case .error: return Color.red
-        case .info: return .blue
-        case .warning: return .orange
+        case .success: return Color.primaryGreen
+        case .error: return Color.primaryRed
+        case .info: return Color.primaryBlue
+        case .warning: return Color.primaryOrange
+        }
+    }
+}
+
+// MARK: - Awake Status Card
+
+struct AwakeStatusCard: View {
+    @EnvironmentObject private var healthKitManager: HealthKitManager
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image(systemName: healthKitManager.currentAwakeStatus.icon)
+                    .font(.title)
+                    .foregroundColor(healthKitManager.currentAwakeStatus.color)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Status Personal")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text(healthKitManager.currentAwakeStatus.displayName)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(healthKitManager.currentAwakeStatus.color)
+                }
+                
+                Spacer()
+                
+                Text(healthKitManager.currentAwakeStatus.emoji)
+                    .font(.title)
+            }
+            
+            Text(healthKitManager.currentAwakeStatus.description)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8) 
+            
+            // Status indicator with animation
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(healthKitManager.currentAwakeStatus.color)
+                    .frame(width: 12, height: 12)
+                    .scaleEffect(healthKitManager.currentAwakeStatus == .awake ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: healthKitManager.currentAwakeStatus)
+                
+                Text(healthKitManager.currentAwakeStatus == .awake ? "Activ și gata de cafea" : "În repaus, detectez trezirea")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: - Auto Coffee Status Card
+
+struct AutoCoffeeStatusCard: View {
+    let status: AutoCoffeeStatus
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Image(systemName: iconName)
+                    .font(.title2)
+                    .foregroundColor(iconColor)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                if case .scheduled(let scheduled) = status {
+                    Text("\(Int(scheduled.timeRemaining))s")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(iconColor)
+                } else if case .executing = status {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+            
+            if case .scheduled(let scheduled) = status {
+                // Progress bar pentru countdown
+                ProgressView(value: 1.0 - (scheduled.timeRemaining / scheduled.delay))
+                    .progressViewStyle(LinearProgressViewStyle(tint: iconColor))
+                    .scaleEffect(y: 2.0)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(iconColor.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
+    private var iconName: String {
+        switch status {
+        case .none:
+            return "questionmark.circle"
+        case .scheduled:
+            return "clock.fill"
+        case .executing:
+            return "cup.and.saucer.fill"
+        case .completed:
+            return "checkmark.circle.fill"
+        case .failed:
+            return "xmark.circle.fill"
+        }
+    }
+    
+    private var iconColor: Color {
+        switch status {
+        case .none:
+            return .gray
+        case .scheduled:
+            return .orange
+        case .executing:
+            return .blue
+        case .completed:
+            return .green
+        case .failed:
+            return .red
+        }
+    }
+    
+    private var title: String {
+        switch status {
+        case .none:
+            return "Status Necunoscut"
+        case .scheduled(let scheduled):
+            return "Cafea Programată"
+        case .executing:
+            return "Se Pregătește Cafea"
+        case .completed(let result):
+            return "Cafea Gata!"
+        case .failed(let result):
+            return "Eroare Comandă"
+        }
+    }
+    
+    private var subtitle: String {
+        switch status {
+        case .none:
+            return ""
+        case .scheduled(let scheduled):
+            return "\(scheduled.recommendation.type.displayName) în \(Int(scheduled.timeRemaining)) secunde"
+        case .executing:
+            return "Se trimite comanda către ESP32..."
+        case .completed(let result):
+            return result.message
+        case .failed(let result):
+            return result.message
         }
     }
 }

@@ -200,6 +200,7 @@ enum WakeDetectionMethod: String {
     case movement = "movement"
     case timeOfDay = "time_of_day"
     case combined = "combined"
+    case manual = "manual"
     
     var displayName: String {
         switch self {
@@ -211,6 +212,8 @@ enum WakeDetectionMethod: String {
             return "Ora zilei"
         case .combined:
             return "Combinat"
+        case .manual:
+            return "Manual"
         }
     }
 }
