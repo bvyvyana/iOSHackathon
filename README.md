@@ -1,12 +1,12 @@
-# ☕ Smart Coffee - iOS Hackathon 2023
+# ☕ Smart Coffee - iOS Hackathon 2025
 
-**Team: One Direction** | **Hackathon ESolutions 2023**
+**Team: One Direction** | **Hackathon ESolutions 2025**
 
 Un sistem inteligent de comandă cafea bazat pe analiza somnului din HealthKit și controlat prin ESP32.
 
 ## 🎯 Despre Proiect
 
-Smart Coffee este soluția noastră pentru Hackathon iOS 2023 - un sistem care analizează calitatea somnului utilizatorului și recomandă/comandă automat tipul perfect de cafea pentru a începe ziua optimal.
+Smart Coffee este soluția noastră pentru Hackathon iOS 2025 - un sistem care analizează calitatea somnului utilizatorului și recomandă/comandă automat tipul perfect de cafea pentru a începe ziua optimal.
 
 **Conceptul principal**: Combinăm datele de somn din HealthKit cu un controller ESP32 conectat la o mașină de cafea pentru a automatiza complet experiența de dimineață.
 
@@ -154,7 +154,7 @@ let averageSleep = SleepData(duration: 7.0, quality: 0.65, deepSleep: 0.18)
 
 ## 🤝 Team One Direction
 
-**Hackathon ESolutions 2023** - dezvoltat în 48 ore
+**Hackathon ESolutions 2025** - dezvoltat în 48 ore
 
 - **iOS Development**: SwiftUI + HealthKit integration
 - **Hardware Engineering**: ESP32 + servo control systems  
